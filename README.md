@@ -1,4 +1,4 @@
-# Coinsnap Prestashop 1.0 Payment Plugin
+# Coinsnap for Prestashop 1.0 Payment Plugin
 
 Tested on PrestaShop 1.7+ to 8.1
 
