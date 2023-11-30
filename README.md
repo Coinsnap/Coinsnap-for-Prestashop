@@ -1,3 +1,4 @@
+![Image of prestashop](https://coinsnap.io/wp-content/uploads/2023/11/Coinsnap-for-prestashop.png)
 # Coinsnap for Prestashop 1.0 Payment Plugin
 
 Tested on PrestaShop 1.7+ to 8.1
