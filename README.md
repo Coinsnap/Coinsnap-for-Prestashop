@@ -1,10 +1,10 @@
-# Coinsnap Prestashop Payment Plugin
+# Coinsnap Prestashop 1.0 Payment Plugin
 
 Tested on PrestaShop 1.7+ to 8.1
 
 ## Download:
 
-Download `CoinsnapPrestaShop.zip` file from the [latest release](https://github.com/Coinsnap/CoinsnapPrestaShop/releases/latest).
+Download ZIP file from Github repository: https://github.com/Coinsnap/Coinsnap-for-Prestashop.
 
 ## Installation
 
