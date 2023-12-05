@@ -36,6 +36,7 @@ class Invoice extends AbstractClient{
                 'redirectUrl' => $redirectUrl,
                 'orderId' => $orderId,
                 'metadata' => (count($metaDataMerged) > 0)? $metaDataMerged : null,
+        //        'checkout' => $checkoutOptions ? $checkoutOptions->toArray() : null,
                 'referralCode' => $referralCode
         );
         
