@@ -19,7 +19,9 @@ class Coinsnap extends PaymentModule
         $this->version = '1.0';
         $this->author = 'Coinsnap';
         $this->need_instance = 1;
-        $this->bootstrap = true;       
+        $this->bootstrap = true;     
+        $this->module_key = '26e3f9b88be0664784deee6be20e4b7b';
+        $this->referralCode = 'D14567';
 		
 		
 		
@@ -60,8 +62,7 @@ class Coinsnap extends PaymentModule
     }
 	
 	
-    public function hookPaymentOptions($params)
-    {
+    public function hookPaymentOptions($params){
         return $this->coinsnapPaymentOptions($params);
     }
 		
@@ -120,8 +121,8 @@ class Coinsnap extends PaymentModule
     }
 		
 	
-    public function getContent()
-    {
+    public function getContent(){
+        
 		if (Tools::isSubmit('submit' . $this->name)) {	
 			
 			$coinsnap_name = Tools::getValue('coinsnap_name');
@@ -150,8 +151,7 @@ class Coinsnap extends PaymentModule
 			}
 		}
 			
-        if ($saveOpt)
-		{			
+        if ($saveOpt){			
 
 			Configuration::updateValue('COINSNAP_STORE_ID', pSQL(Tools::getValue('coinsnap_store_id')));
 			Configuration::updateValue('COINSNAP_API_KEY', pSQL(Tools::getValue('coinsnap_api_key')));
@@ -182,7 +182,7 @@ class Coinsnap extends PaymentModule
 		$coinsnap_status_processing = empty(Configuration::get( 'COINSNAP_STATUS_PRO' )) ? 3 : Configuration::get( 'COINSNAP_STATUS_PRO' );
 		
 
-        $data    = array(
+        $data = array(
             'base_url'    => _PS_BASE_URL_ . __PS_BASE_URI__,
             'module_name' => $this->name,            
 			'coinsnap_store_id' => Configuration::get('COINSNAP_STORE_ID'),		        
@@ -204,8 +204,7 @@ class Coinsnap extends PaymentModule
 	
 	
 	
-    public function coinsnapPaymentOptions($params)
-    {
+    public function coinsnapPaymentOptions($params){
 
         if (!$this->active) {
             return;
@@ -219,8 +218,8 @@ class Coinsnap extends PaymentModule
         return $payment_options;
     }
 
-    public function checkCurrency($cart)
-    {
+    public function checkCurrency($cart){
+        
         $currency_order = new Currency($cart->id_currency);
         $currencies_module = $this->getCurrency($cart->id_currency);
 
@@ -234,8 +233,7 @@ class Coinsnap extends PaymentModule
         return false;
     }
 
-    public function coinsnapExternalPaymentOption()
-    {
+    public function coinsnapExternalPaymentOption(){
         $lang = Tools::strtolower($this->context->language->iso_code);
 		$url = $this->context->link->getModuleLink('coinsnap', 'payment');
 		$errmsg = null;
@@ -256,8 +254,7 @@ class Coinsnap extends PaymentModule
         return $newOption;
     }
 
-    public function coinsnapPaymentReturnNew($params)
-    {
+    public function coinsnapPaymentReturnNew($params){
         
         if ($this->active == false) {
             return;
@@ -279,8 +276,7 @@ class Coinsnap extends PaymentModule
     }
 	
 	
-	public function getUrl($pay_currency)
-    {        
+	public function getUrl($pay_currency){        
 		
 		$cart = $this->context->cart;
 		$customer = new Customer($cart->id_customer);		
@@ -294,7 +290,7 @@ class Coinsnap extends PaymentModule
 		$redirectUrl =  _PS_BASE_URL_.__PS_BASE_URI__.'index.php?controller=order-confirmation&id_cart='.(int)$cart->id.'&id_module='.(int)$this->id.'&id_order='.(int)$order_id.'&key='.$cart->secure_key;					
 		$notifyURL  = $this->context->link->getModuleLink('coinsnap', 'notify');
 		
-		$buyerName =  $iaddress->firstname.' '.$iddress->lastname;
+		$buyerName =  $iaddress->firstname.' '.$iaddress->lastname;
 		$buyerEmail = $customer->email;
 
 		$metadata = [];
@@ -314,7 +310,7 @@ class Coinsnap extends PaymentModule
 			$buyerEmail,
 			$buyerName, 
 			$redirectUrl,
-			'',     
+			$this->referralCode,     
 			$metadata,
 			$checkoutOptions
 		);
