@@ -27,13 +27,13 @@ Enter “Coinsnap” in the search bar area and click on the “Install” butto
 #### (4) Configure Coinsnap-Prestashop ####
 After successful installation, click on the “Configure” button.
 
-![](https://github.com/Coinsnap/Coinsnap-for-Prestashop/blob/main/assets/module-manager.png)
+![](https://coinsnap.io/wp-content/uploads/2023/11/Screenshot-2023-11-30-at-11.00.33.png)
 
 Open the Coinsnap app (if you don’t have an account yet, you can find instructions on how to get started with Coinsnap at this link).
 
 Go to “Settings” and navigate to the “Store settings” section where you need to copy the following information: (1) Store ID and (2) API key.
 
-![](https://github.com/Coinsnap/Coinsnap-for-Prestashop/blob/main/assets/coinsnap-store.png)
+![](https://coinsnap.io/wp-content/uploads/2023/11/Screenshot-2023-11-30-at-10.22.46.png)
 
 #### (1) Store ID ####
 Paste the Store ID you copied into the first field.
@@ -41,7 +41,7 @@ Paste the Store ID you copied into the first field.
 #### (2) API-Key ####
 Api key that you have copied, paste it into the second field.
 
-![](https://github.com/Coinsnap/Coinsnap-for-Prestashop/blob/main/assets/prestashop-store.png)
+![](https://coinsnap.io/wp-content/uploads/2023/11/Screenshot-2023-11-30-at-10.10.55-2.png)
 
 #### (1) Order status ####
 Select the appropriate payment status for the order status.
@@ -49,4 +49,4 @@ Select the appropriate payment status for the order status.
 #### (2) Save changes ####
 Finally, click on the “Save” button to ensure that your settings are applied.
 
-![](https://github.com/Coinsnap/Coinsnap-for-Prestashop/blob/main/assets/order-status.png)
+![](https://coinsnap.io/wp-content/uploads/2023/11/Screenshot-2023-11-30-at-10.12.56-1.png)
