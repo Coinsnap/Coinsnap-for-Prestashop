@@ -1,5 +1,6 @@
+# Coinsnap for Prestashop payment plugin #
 ![Image of prestashop](https://coinsnap.io/wp-content/uploads/2023/11/Coinsnap-for-prestashop.png)
-# Coinsnap for Prestashop payment plugin
+## Accept Bitcoin and Lightning Payments with Prestashop ##
 
 == Description ==
 
