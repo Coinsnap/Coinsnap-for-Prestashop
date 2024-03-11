@@ -1,10 +1,33 @@
 <?php
+/**
+ * Copyright since 2023 Coinsnap
+ *
+ * NOTICE OF LICENSE
+ *
+ * This source file is subject to the Academic Free License version 3.0
+ * that is bundled with this package in the file LICENSE.md.
+ * It is also available through the world-wide-web at this URL:
+ * https://opensource.org/licenses/AFL-3.0
+ * If you did not receive a copy of the license and are unable to
+ * obtain it through the world-wide-web, please send an email
+ * to info@coinsnap.io so we can send you a copy immediately.
+ *
+ * @author    Coinsnap <dev@coinsnap.io>
+ * @copyright Since 2023 Coinsnap
+ * @license   https://opensource.org/licenses/AFL-3.0 Academic Free License version 3.0
+ */
 declare(strict_types=1);
 namespace Coinsnap\Client;
 
-class ApiKey extends AbstractClient{
+if (!defined('_PS_VERSION_')) {
+    exit;
+}
 
-//  Create a URL you can send the user to. He/she will be prompted to create an API key that corresponds with your needs.    
+
+
+class ApiKey extends AbstractClient
+{
+    //  Create a URL you can send the user to. He/she will be prompted to create an API key that corresponds with your needs.
     public static function getAuthorizeUrl(string $baseUrl, array $permissions, ?string $applicationName, ?bool $strict, ?bool $selectiveStores, ?string $redirectToUrlAfterCreation, ?string $applicationIdentifier): string
     {
         $url = rtrim($baseUrl, '/') . '/api/v1/'.COINSNAP_SERVER_PATH.'/';
@@ -52,7 +75,7 @@ class ApiKey extends AbstractClient{
         return $url;
     }
 
-//  Get the current API Key information
+    //  Get the current API Key information
 
     public function getCurrent(): \Coinsnap\Result\ApiKey
     {

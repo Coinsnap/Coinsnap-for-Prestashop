@@ -1,5 +1,4 @@
-<?php
-/**
+{**
  * Copyright since 2023 Coinsnap
  *
  * NOTICE OF LICENSE
@@ -15,16 +14,16 @@
  * @author    Coinsnap <dev@coinsnap.io>
  * @copyright Since 2023 Coinsnap
  * @license   https://opensource.org/licenses/AFL-3.0 Academic Free License version 3.0
- */
-declare(strict_types=1);
-namespace Coinsnap\Exception;
+ *}
 
-if (!defined('_PS_VERSION_')) {
-    exit;
-}
+<form id="stc-payment-form" action="{if isset($action_url)}{$action_url|escape:'html':'UTF-8'}{/if}" method="post">    
 
+    <p>
+    <img src="{$module_dir|escape:'html':'UTF-8'}/views/img/front-logo.png" alt="{l s='Bitcoin + Lightning' mod='coinsnap'}" class="coinsnap-logo" />
+    {l s='Bitcoin + Lightning' mod='coinsnap'}
+    </p>
 
-class ForbiddenException extends RequestException
-{
-    public const STATUS = 403;
-}
+{if isset($errmsg)}
+<div class="alert alert-warning">{$errmsg|escape:'html':'UTF-8'}</div>
+{/if}
+</form>	

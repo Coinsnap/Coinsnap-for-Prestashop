@@ -1,13 +1,34 @@
 <?php
-
+/**
+ * Copyright since 2023 Coinsnap
+ *
+ * NOTICE OF LICENSE
+ *
+ * This source file is subject to the Academic Free License version 3.0
+ * that is bundled with this package in the file LICENSE.md.
+ * It is also available through the world-wide-web at this URL:
+ * https://opensource.org/licenses/AFL-3.0
+ * If you did not receive a copy of the license and are unable to
+ * obtain it through the world-wide-web, please send an email
+ * to info@coinsnap.io so we can send you a copy immediately.
+ *
+ * @author    Coinsnap <dev@coinsnap.io>
+ * @copyright Since 2023 Coinsnap
+ * @license   https://opensource.org/licenses/AFL-3.0 Academic Free License version 3.0
+ */
 declare(strict_types=1);
-
 namespace Coinsnap\Client;
+
+if (!defined('_PS_VERSION_')) {
+    exit;
+}
+
 
 use Coinsnap\Result\InvoicePaymentMethod;
 use Coinsnap\Util\PreciseNumber;
 
-class Invoice extends AbstractClient{
+class Invoice extends AbstractClient
+{
     public function createInvoice(
         string $storeId,
         string $currency,
@@ -18,30 +39,34 @@ class Invoice extends AbstractClient{
         ?string $redirectUrl = null,
         ?string $referralCode = null,
         ?array $metaData = null,
-        ?InvoiceCheckoutOptions $checkoutOptions = null): \Coinsnap\Result\Invoice 
-    {
+        ?InvoiceCheckoutOptions $checkoutOptions = null
+    ): \Coinsnap\Result\Invoice {
         $url = $this->getApiUrl().''.COINSNAP_SERVER_PATH.'/'.urlencode($storeId).'/invoices';
         $headers = $this->getRequestHeaders();
         $method = 'POST';
 
         // Prepare metadata.
         $metaDataMerged = [];
-        if(!empty($orderId)) $metaDataMerged['orderNumber'] = $orderId;
-        if(!empty($customerName)) $metaDataMerged['customerName'] = $customerName;
-        
+        if(!empty($orderId)) {
+            $metaDataMerged['orderNumber'] = $orderId;
+        }
+        if(!empty($customerName)) {
+            $metaDataMerged['customerName'] = $customerName;
+        }
+
         $body_array = array(
             'amount' => $amount !== null ? $amount->__toString() : null,
                 'currency' => $currency,
                 'buyerEmail' => $buyerEmail,
                 'redirectUrl' => $redirectUrl,
                 'orderId' => $orderId,
-                'metadata' => (count($metaDataMerged) > 0)? $metaDataMerged : null,
+                'metadata' => (count($metaDataMerged) > 0) ? $metaDataMerged : null,
         //        'checkout' => $checkoutOptions ? $checkoutOptions->toArray() : null,
                 'referralCode' => $referralCode
         );
-        
-        
-        $body = json_encode($body_array,JSON_THROW_ON_ERROR);
+
+
+        $body = json_encode($body_array, JSON_THROW_ON_ERROR);
 
         $response = $this->getHttpClient()->request($method, $url, $headers, $body);
 
@@ -56,8 +81,9 @@ class Invoice extends AbstractClient{
         }
     }
 
-    public function getInvoice(string $storeId,string $invoiceId): \Coinsnap\Result\Invoice {
-        
+    public function getInvoice(string $storeId, string $invoiceId): \Coinsnap\Result\Invoice
+    {
+
         $url = $this->getApiUrl().''.COINSNAP_SERVER_PATH.'/'.urlencode($storeId).'/invoices/'.urlencode($invoiceId);
         $headers = $this->getRequestHeaders();
         $method = 'GET';

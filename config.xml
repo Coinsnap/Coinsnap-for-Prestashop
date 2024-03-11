@@ -2,7 +2,7 @@
 <module>
     <name>coinsnap</name>
     <displayName><![CDATA[coinsnap]]></displayName>
-    <version><![CDATA[1.1]]></version>
+    <version><![CDATA[1.0.0]]></version>
     <description><![CDATA[Coinsnap Gateway PrestaShop]]></description>
     <author><![CDATA[Coinsnap]]></author>
     <tab><![CDATA[payments_gateways]]></tab>

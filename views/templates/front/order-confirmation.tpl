@@ -1,5 +1,4 @@
-<?php
-/**
+{**
  * Copyright since 2023 Coinsnap
  *
  * NOTICE OF LICENSE
@@ -8,32 +7,16 @@
  * that is bundled with this package in the file LICENSE.md.
  * It is also available through the world-wide-web at this URL:
  * https://opensource.org/licenses/AFL-3.0
+ * If you did not receive a copy of the license and are unable to
+ * obtain it through the world-wide-web, please send an email
+ * to info@coinsnap.io so we can send you a copy immediately.
  *
  * @author    Coinsnap <dev@coinsnap.io>
  * @copyright Since 2023 Coinsnap
  * @license   https://opensource.org/licenses/AFL-3.0 Academic Free License version 3.0
- */
-declare(strict_types=1);
-namespace Coinsnap\Http;
+ *}
 
-if (!defined('_PS_VERSION_')) {
-    exit;
-}
+{if isset($errmsg)}
+<div class="alert alert-warning">{$errmsg|escape:'html':'UTF-8'}</div>
 
-interface ResponseInterface
-{
-    /**
-     * HTTP status code.
-     */
-    public function getStatus(): int;
-
-    /**
-     * Response data.
-     */
-    public function getBody(): string;
-
-    /**
-     * HTTP headers as an associative array of the response.
-     */
-    public function getHeaders(): array;
-}
+{/if}
