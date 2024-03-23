@@ -59,7 +59,10 @@ class Coinsnap extends PaymentModule
         $this -> status_expired = Configuration::get('COINSNAP_STATUS_EXP');
         $this -> status_settled = Configuration::get('COINSNAP_STATUS_SET');
         $this -> status_processing = Configuration::get('COINSNAP_STATUS_PRO');
-        define('COINSNAP_SERVER_PATH', 'stores');
+        
+        if(!defined('COINSNAP_SERVER_PATH')){
+            define('COINSNAP_SERVER_PATH', 'stores');
+        }
 
     }
 
