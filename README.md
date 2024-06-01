@@ -34,7 +34,7 @@ Open the Coinsnap app (if you don’t have an account yet, you can find instruct
 
 Go to “Settings” and navigate to the “Store settings” section where you need to copy the following information: (1) Store ID and (2) API key.
 
-![](https://coinsnap.io/wp-content/uploads/2023/11/Screenshot-2023-11-30-at-10.22.46.png)
+![](https://coinsnap.io/wp-content/uploads/2023/11/Screenshot-2024-05-27-at-08.16.52.png)
 
 #### (1) Store ID ####
 Paste the Store ID you copied into the first field.
