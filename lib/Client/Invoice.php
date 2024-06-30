@@ -46,13 +46,8 @@ class Invoice extends AbstractClient
         $method = 'POST';
 
         // Prepare metadata.
-        $metaDataMerged = [];
-        if(!empty($orderId)) {
-            $metaDataMerged['orderNumber'] = $orderId;
-        }
-        if(!empty($customerName)) {
-            $metaDataMerged['customerName'] = $customerName;
-        }
+        if(!isset($metaData['orderNumber']) && !empty($orderId)) $metaData['orderNumber'] = $orderId;
+        if(!isset($metaData['customerName']) && !empty($customerName)) $metaData['customerName'] = $customerName;
 
         $body_array = array(
             'amount' => $amount !== null ? $amount->__toString() : null,
@@ -60,7 +55,7 @@ class Invoice extends AbstractClient
                 'buyerEmail' => $buyerEmail,
                 'redirectUrl' => $redirectUrl,
                 'orderId' => $orderId,
-                'metadata' => (count($metaDataMerged) > 0) ? $metaDataMerged : null,
+                'metadata' => (count($metaData) > 0) ? $metaData : null,
         //        'checkout' => $checkoutOptions ? $checkoutOptions->toArray() : null,
                 'referralCode' => $referralCode
         );

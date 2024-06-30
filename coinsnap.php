@@ -29,7 +29,7 @@ class Coinsnap extends PaymentModule
     {
         $this->name = 'coinsnap';
         $this->tab = 'payments_gateways';
-        $this->version = '1.0.0';
+        $this->version = '1.0.5';
         $this->author = 'Coinsnap';
         $this->need_instance = 1;
         $this->bootstrap = true;
@@ -87,20 +87,20 @@ class Coinsnap extends PaymentModule
         $notify_ar = json_decode($notify_json, true);
         $invoice_id =  $notify_ar['invoiceId'];
         $status = 'New';
-        $cart_id = '';
+        $order_id = '';
 
         try {
             $client = new \Coinsnap\Client\Invoice($this->api_url, $this->api_key);
             $invoice = $client->getInvoice($this->store_id, $invoice_id);
             $status = $invoice->getData()['status'] ;
-            $cart_id = $invoice->getData()['orderId'] ;
+            $order_id = $invoice->getData()['orderId'] ;
 
 
         } catch (\Throwable $e) {
             echo "Fail";
             exit;
         }
-        $order_id = Order::getOrderByCartId($cart_id);
+        //$order_id = Order::getOrderByCartId($cart_id);
 
 
         if ($status == 'New') {
@@ -312,25 +312,36 @@ class Coinsnap extends PaymentModule
         $iaddress = new Address($cart->id_address_invoice);
 
         $amount = number_format($cart->getOrderTotal(true, Cart::BOTH), 2);
-        $order_id = $cart->id;
+        $cart_id = $cart->id;
         $ps_currency  = new Currency((int)($cart->id_currency));
         $currency_code = $ps_currency->iso_code;
 
-        $redirectUrl =  _PS_BASE_URL_.__PS_BASE_URI__.'index.php?controller=order-confirmation&id_cart='.(int)$cart->id.'&id_module='.(int)$this->id.'&id_order='.(int)$order_id.'&key='.$cart->secure_key;
+        $redirectUrl =  _PS_BASE_URL_.__PS_BASE_URI__.'index.php?controller=order-confirmation&id_cart='.(int)$cart_id.'&id_module='.(int)$this->id.'&id_order='.(int)$cart_id.'&key='.$cart->secure_key;
         $notifyURL  = $this->context->link->getModuleLink('coinsnap', 'notify');
 
         $buyerName =  $iaddress->firstname.' '.$iaddress->lastname;
         $buyerEmail = $customer->email;
-
-        $metadata = [];
-        $metadata['orderNumber'] = $order_id;
-        $metadata['customerName'] = $buyerName;
 
         $checkoutOptions = new \Coinsnap\Client\InvoiceCheckoutOptions();
 
         $checkoutOptions->setRedirectURL($redirectUrl);
         $client = new \Coinsnap\Client\Invoice($this->api_url, $this->api_key);
         $camount = \Coinsnap\Util\PreciseNumber::parseFloat($amount, 2);
+        
+        //  Order saving
+        $extra_vars['transaction_id'] = '';
+        $this->validateOrder((int)$cart_id, (int)$this->status_new, (float)$amount, $this->displayName, null, $extra_vars, null, false, $cart->secure_key);
+        
+        $order_id = Order::getOrderByCartId($cart_id);
+        $order = new Order($order_id);
+        $order_number = $order->reference;
+        
+        $this->add_log('notification', 'Order Number: '.$order->reference.'('.$order_id.')') ;
+        
+        $metadata = [];
+        $metadata['orderNumber'] = $order_number;
+        $metadata['customerName'] = $buyerName;
+
         $invoice = $client->createInvoice(
             $this->store_id,
             $currency_code,
@@ -345,16 +356,17 @@ class Coinsnap extends PaymentModule
         );
 
         $payurl = $invoice->getData()['checkoutLink'] ;
+        
 
 
         if (!empty($payurl)) {
             $invoice_id = $invoice->getData()['id'] ;
-            $extra_vars['transaction_id'] = $invoice_id;
-            $this->validateOrder((int)$order_id, (int)$this->status_new, (float)$amount, $this->displayName, null, $extra_vars, null, false, $cart->secure_key);
+            //  $extra_vars['transaction_id'] = $invoice_id;
+            $this->set_trans_no($order_id, $invoice_id);
             return  $payurl;
-        } else {
+        }
+        else {
             $errmsg = $this->l("API Error");
-
             $checkout_type = Configuration::get('PS_ORDER_PROCESS_TYPE') ? 'order-opc' : 'order';
             $url = (_PS_VERSION_ >= '1.5' ? 'index.php?controller='.$checkout_type.'&' : $checkout_type.'.php?').'step=3&cgv=1&coinsnaperror='.$errmsg.'#coinsnap-anchor';
             Tools::redirect($url);
