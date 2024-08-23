@@ -38,7 +38,7 @@ class Coinsnap extends PaymentModule
     {
         $this->name = 'coinsnap';
         $this->tab = 'payments_gateways';
-        $this->version = '1.0.5';
+        $this->version = '1.0.8';
         $this->author = 'Coinsnap';
         $this->need_instance = 1;
         $this->bootstrap = true;
