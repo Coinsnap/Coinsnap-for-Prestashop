@@ -22,6 +22,15 @@ require_once(dirname(__FILE__) . '/lib/autoload.php');
 
 class Coinsnap extends PaymentModule
 {
+    public string $referralCode;
+    public string $meta_title;
+    public string $api_url;
+    public string $store_id;
+    public string $api_key;
+    public string $status_new;
+    public string $status_expired;
+    public string $status_settled;
+    public string $status_processing;
     public const WEBHOOK_EVENTS = ['New','Expired','Settled','Processing'];
 
 
