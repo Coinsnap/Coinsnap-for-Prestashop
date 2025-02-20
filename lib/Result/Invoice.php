@@ -17,12 +17,12 @@
  * @license   https://opensource.org/licenses/AFL-3.0 Academic Free License version 3.0
  */
 declare(strict_types=1);
+
 namespace Coinsnap\Result;
 
 if (!defined('_PS_VERSION_')) {
     exit;
 }
-
 
 use Coinsnap\Util\PreciseNumber;
 
@@ -149,6 +149,7 @@ class Invoice extends AbstractResult
     }
 
     public function getAvailableStatusesForManualMarking(): array //    @return string[] Example: ["Settled", "Invalid"]
-    {return $this->getData()['availableStatusesForManualMarking'];
+    {
+        return $this->getData()['availableStatusesForManualMarking'];
     }
 }

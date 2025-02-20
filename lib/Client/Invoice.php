@@ -17,12 +17,12 @@
  * @license   https://opensource.org/licenses/AFL-3.0 Academic Free License version 3.0
  */
 declare(strict_types=1);
+
 namespace Coinsnap\Client;
 
 if (!defined('_PS_VERSION_')) {
     exit;
 }
-
 
 use Coinsnap\Result\InvoicePaymentMethod;
 use Coinsnap\Util\PreciseNumber;
@@ -46,8 +46,12 @@ class Invoice extends AbstractClient
         $method = 'POST';
 
         // Prepare metadata.
-        if(!isset($metaData['orderNumber']) && !empty($orderId)) $metaData['orderNumber'] = $orderId;
-        if(!isset($metaData['customerName']) && !empty($customerName)) $metaData['customerName'] = $customerName;
+        if (!isset($metaData['orderNumber']) && !empty($orderId)) {
+            $metaData['orderNumber'] = $orderId;
+        }
+        if (!isset($metaData['customerName']) && !empty($customerName)) {
+            $metaData['customerName'] = $customerName;
+        }
 
         $body_array = array(
             'amount' => $amount !== null ? $amount->__toString() : null,
@@ -60,25 +64,23 @@ class Invoice extends AbstractClient
                 'referralCode' => $referralCode
         );
 
-
         $body = json_encode($body_array, JSON_THROW_ON_ERROR);
-
         $response = $this->getHttpClient()->request($method, $url, $headers, $body);
 
         if ($response->getStatus() === 200) {
             return new \Coinsnap\Result\Invoice(
                 json_decode($response->getBody(), true, 512, JSON_THROW_ON_ERROR)
             );
-        } else {
+        }
+        else {
             print_r($response);
             exit;
-            //throw $this->getExceptionByStatusCode($method, $url, $response);
+            throw $this->getExceptionByStatusCode($method, $url, $response);
         }
     }
 
     public function getInvoice(string $storeId, string $invoiceId): \Coinsnap\Result\Invoice
     {
-
         $url = $this->getApiUrl().''.COINSNAP_SERVER_PATH.'/'.urlencode($storeId).'/invoices/'.urlencode($invoiceId);
         $headers = $this->getRequestHeaders();
         $method = 'GET';

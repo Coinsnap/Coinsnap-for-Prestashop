@@ -38,14 +38,13 @@ class Coinsnap extends PaymentModule
     {
         $this->name = 'coinsnap';
         $this->tab = 'payments_gateways';
-        $this->version = '1.0.8';
+        $this->version = '1.1.0';
         $this->author = 'Coinsnap';
         $this->need_instance = 1;
+
         $this->bootstrap = true;
         $this->module_key = '26e3f9b88be0664784deee6be20e4b7b';
         $this->referralCode = 'D14567';
-
-
 
         $this->ps_versions_compliancy = array(
             'min' => '1.7',
@@ -58,7 +57,7 @@ class Coinsnap extends PaymentModule
         $this->meta_title = $this->l('coinsnap');
         $this->displayName = 'coinsnap';
         $this->description = $this->l('Coinsnap Gateway PrestaShop');
-
+        $this->confirmUninstall = $this->l('Are you sure you want to uninstall Coinsnap payment module?');
 
         $this -> api_url = 'https://app.coinsnap.io';
         $this -> store_id = Configuration::get('COINSNAP_STORE_ID');
@@ -68,27 +67,28 @@ class Coinsnap extends PaymentModule
         $this -> status_expired = Configuration::get('COINSNAP_STATUS_EXP');
         $this -> status_settled = Configuration::get('COINSNAP_STATUS_SET');
         $this -> status_processing = Configuration::get('COINSNAP_STATUS_PRO');
-        
-        if(!defined('COINSNAP_SERVER_PATH')){
+
+        if (!defined('COINSNAP_SERVER_PATH')) {
             define('COINSNAP_SERVER_PATH', 'stores');
         }
 
     }
 
-    public function install(){
-        if (!parent::install() || !$this->registerHook('paymentOptions')) { // || !$this->registerHook('adminOrder')
+    public function install()
+    {
+        if (!parent::install() || !$this->registerHook('paymentOptions')) {
             return false;
         }
         return true;
     }
 
-    public function hookPaymentOptions($params){
+    public function hookPaymentOptions($params)
+    {
         return $this->coinsnapPaymentOptions($params);
     }
 
-
-
-    public function returnsuccess(){
+    public function returnsuccess()
+    {
 
         $notify_json = Tools::file_get_contents('php://input');
         $this->add_log('notification', $notify_json) ;
@@ -110,6 +110,8 @@ class Coinsnap extends PaymentModule
             exit;
         }
         //$order_id = Order::getOrderByCartId($cart_id);
+
+        $status_id = '';
 
 
         if ($status == 'New') {
@@ -139,8 +141,8 @@ class Coinsnap extends PaymentModule
         return (true);
     }
 
-
-    public function getContent(){
+    public function getContent()
+    {
 
         if (Tools::isSubmit('submit' . $this->name)) {
 
@@ -190,10 +192,10 @@ class Coinsnap extends PaymentModule
                 Configuration::updateValue('COINSNAP_STATUS_PRO', pSQL(Tools::getValue('coinsnap_status_processing')));
 
                 $html = $this->l('Configuration updated successfully');
-                
+
             } else {
                 $warning = $this->l($err_msg);
-                
+
             }
         }
         $states = OrderState::getOrderStates((int) Configuration::get('PS_LANG_DEFAULT'));
@@ -203,12 +205,10 @@ class Coinsnap extends PaymentModule
             $OrderStates[$state['id_order_state']] = $state['name'];
         }
 
-
         $coinsnap_status_new  = empty(Configuration::get('COINSNAP_STATUS_NEW')) ? 1 : Configuration::get('COINSNAP_STATUS_NEW');
         $coinsnap_status_expired  = empty(Configuration::get('COINSNAP_STATUS_EXP')) ? 8 : Configuration::get('COINSNAP_STATUS_EXP');
         $coinsnap_status_settled  = empty(Configuration::get('COINSNAP_STATUS_SET')) ? 2 : Configuration::get('COINSNAP_STATUS_SET');
         $coinsnap_status_processing = empty(Configuration::get('COINSNAP_STATUS_PRO')) ? 3 : Configuration::get('COINSNAP_STATUS_PRO');
-
 
         $data = array(
             'base_url'    => _PS_BASE_URL_ . __PS_BASE_URI__,
@@ -223,10 +223,13 @@ class Coinsnap extends PaymentModule
             //'coinsnap_warning' => $warning,
             'orderstates' => $OrderStates
         );
-        
-        if(isset($html)) $data['coinsnap_confirmation'] = $html;
-        if(isset($warning)) $data['coinsnap_warning'] = $warning;
 
+        if (isset($html)) {
+            $data['coinsnap_confirmation'] = $html;
+        }
+        if (isset($warning)) {
+            $data['coinsnap_warning'] = $warning;
+        }
 
         $this->context->smarty->assign($data);
         $output = $this->display(__FILE__, 'views/templates/admin/admin.tpl');
@@ -234,9 +237,8 @@ class Coinsnap extends PaymentModule
         return $output;
     }
 
-
-
-    public function coinsnapPaymentOptions($params){
+    public function coinsnapPaymentOptions($params)
+    {
 
         if (!$this->active) {
             return;
@@ -250,7 +252,8 @@ class Coinsnap extends PaymentModule
         return $payment_options;
     }
 
-    public function checkCurrency($cart){
+    public function checkCurrency($cart)
+    {
 
         $currency_order = new Currency($cart->id_currency);
         $currencies_module = $this->getCurrency($cart->id_currency);
@@ -270,7 +273,7 @@ class Coinsnap extends PaymentModule
         $lang = Tools::strtolower($this->context->language->iso_code);
         $url = $this->context->link->getModuleLink('coinsnap', 'payment');
         $errmsg = null;
-        
+
         if (Tools::getIsset('coinsnaperror')) {
             $errmsg = Tools::getValue('coinsnaperror');
         }
@@ -280,8 +283,6 @@ class Coinsnap extends PaymentModule
             'action_url' => $url,
             'errmsg' => $errmsg,
         ));
-
-
 
         $newOption = new PaymentOption();
         $newOption->setCallToActionText($this->l('Pay with Bitcoin + Lightning'))
@@ -301,7 +302,6 @@ class Coinsnap extends PaymentModule
             $this->smarty->assign('status', 'ok');
         }
 
-
         $this->smarty->assign(array(
             'id_order' => $order->id,
             'reference' => $order->reference,
@@ -311,7 +311,6 @@ class Coinsnap extends PaymentModule
         ));
         return $this->fetch('module:' . $this->name . '/views/templates/front/order-confirmation.tpl');
     }
-
 
     public function getUrl($pay_currency)
     {
@@ -336,17 +335,17 @@ class Coinsnap extends PaymentModule
         $checkoutOptions->setRedirectURL($redirectUrl);
         $client = new \Coinsnap\Client\Invoice($this->api_url, $this->api_key);
         $camount = \Coinsnap\Util\PreciseNumber::parseFloat($amount, 2);
-        
+
         //  Order saving
         $extra_vars['transaction_id'] = '';
         $this->validateOrder((int)$cart_id, (int)$this->status_new, (float)$amount, $this->displayName, null, $extra_vars, null, false, $cart->secure_key);
-        
+
         $order_id = Order::getOrderByCartId($cart_id);
         $order = new Order($order_id);
         $order_number = $order->reference;
-        
+
         $this->add_log('notification', 'Order Number: '.$order->reference.'('.$order_id.')') ;
-        
+
         $metadata = [];
         $metadata['orderNumber'] = $order_number;
         $metadata['customerName'] = $buyerName;
@@ -365,22 +364,18 @@ class Coinsnap extends PaymentModule
         );
 
         $payurl = $invoice->getData()['checkoutLink'] ;
-        
-
 
         if (!empty($payurl)) {
             $invoice_id = $invoice->getData()['id'] ;
             //  $extra_vars['transaction_id'] = $invoice_id;
             $this->set_trans_no($order_id, $invoice_id);
             return  $payurl;
-        }
-        else {
+        } else {
             $errmsg = $this->l("API Error");
             $checkout_type = Configuration::get('PS_ORDER_PROCESS_TYPE') ? 'order-opc' : 'order';
             $url = (_PS_VERSION_ >= '1.5' ? 'index.php?controller='.$checkout_type.'&' : $checkout_type.'.php?').'step=3&cgv=1&coinsnaperror='.$errmsg.'#coinsnap-anchor';
             Tools::redirect($url);
             exit;
-
         }
 
     }
@@ -400,9 +395,9 @@ class Coinsnap extends PaymentModule
         } catch (\Throwable $e) {
             return false;
         }
-
         return false;
     }
+    
     public function registerWebhook(string $storeId, string $apiKey, string $webhook): bool
     {
         try {
@@ -420,7 +415,6 @@ class Coinsnap extends PaymentModule
         } catch (\Throwable $e) {
             return false;
         }
-
         return false;
     }
 
@@ -439,8 +433,6 @@ class Coinsnap extends PaymentModule
 
             return false;
         }
-
-
     }
 
     public function setOrderStatus($order_id, $status, $invoice_id)

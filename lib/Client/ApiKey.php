@@ -17,13 +17,12 @@
  * @license   https://opensource.org/licenses/AFL-3.0 Academic Free License version 3.0
  */
 declare(strict_types=1);
+
 namespace Coinsnap\Client;
 
 if (!defined('_PS_VERSION_')) {
     exit;
 }
-
-
 
 class ApiKey extends AbstractClient
 {
@@ -76,7 +75,6 @@ class ApiKey extends AbstractClient
     }
 
     //  Get the current API Key information
-
     public function getCurrent(): \Coinsnap\Result\ApiKey
     {
         $url = $this->getApiUrl() . '/api/v1/'.COINSNAP_SERVER_PATH.'/';

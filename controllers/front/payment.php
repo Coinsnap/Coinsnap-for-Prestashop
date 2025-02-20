@@ -30,27 +30,20 @@ class CoinsnapPaymentModuleFrontController extends ModuleFrontController
 
     public function __construct()
     {
-
         $this->controller_type = 'modulefront';
-
         $this->module = Module::getInstanceByName(Tools::getValue('module'));
-        if (! $this->module->active) {
+        if (!$this->module->active) {
             Tools::redirect('index');
         }
         $this->page_name = 'module-' . $this->module->name . '-' . Dispatcher::getInstance()->getController();
-
-
         parent::__construct();
     }
 
     public function postProcess()
     {
-
         $Coinsnap = new Coinsnap();
         $pay_currency = empty(Tools::getValue('pay_currency')) ? '' : Tools::getValue('pay_currency');
         $url = $Coinsnap->getUrl($pay_currency);
         Tools::redirect(Tools::safeOutput($url, ''));
     }
-
-
 }

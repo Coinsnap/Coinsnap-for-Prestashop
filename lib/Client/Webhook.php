@@ -17,13 +17,15 @@
  * @license   https://opensource.org/licenses/AFL-3.0 Academic Free License version 3.0
  */
 declare(strict_types=1);
+
 namespace Coinsnap\Client;
 
 if (!defined('_PS_VERSION_')) {
     exit;
 }
 
-class Webhook extends AbstractClient {
+class Webhook extends AbstractClient
+{
     /**
      * @param string $storeId
      * @return \Coinsnap\Result\WebhookList
@@ -59,15 +61,9 @@ class Webhook extends AbstractClient {
         }
     }
 
-
-
-    public function createWebhook(string $storeId, string $url, ?array $specificEvents, ?string $secret): \Coinsnap\Result\WebhookCreated //bool $enabled = true,bool $automaticRedelivery = true
-    {$data = [
-            //'enabled' => $enabled,
-            //'automaticRedelivery' => $automaticRedelivery,
-            'url' => $url
-        ];
-
+    public function createWebhook(string $storeId, string $url, ?array $specificEvents, ?string $secret): \Coinsnap\Result\WebhookCreated
+    {
+        $data = ['url' => $url];
 
         if ($specificEvents === null) {
             $data['authorizedEvents'] = ['everything' => true];

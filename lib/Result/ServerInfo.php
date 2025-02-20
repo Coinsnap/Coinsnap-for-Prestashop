@@ -17,12 +17,12 @@
  * @license   https://opensource.org/licenses/AFL-3.0 Academic Free License version 3.0
  */
 declare(strict_types=1);
+
 namespace Coinsnap\Result;
 
 if (!defined('_PS_VERSION_')) {
     exit;
 }
-
 
 class ServerInfo extends AbstractResult
 {
@@ -47,6 +47,4 @@ class ServerInfo extends AbstractResult
     {
         return $this->getData()['supportedPaymentMethods'];
     }
-
-    // TODO add "syncStatus" structure
 }

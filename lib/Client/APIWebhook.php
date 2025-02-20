@@ -17,13 +17,12 @@
  * @license   https://opensource.org/licenses/AFL-3.0 Academic Free License version 3.0
  */
 declare(strict_types=1);
+
 namespace Coinsnap\Client;
 
 if (!defined('_PS_VERSION_')) {
     exit;
 }
-
-
 
 use Coinsnap\Client\Webhook;
 use Coinsnap\Client\Webhook as WebhookResult;
@@ -117,7 +116,6 @@ class APIWebhook
     //  Load existing webhook data from Coinsnap, defaults to locally stored webhook.
     public static function getWebhooks(?string $storeId): ?WebhookResult
     {
-
         $config = CoinsnapApiHelper::getConfig();
 
         try {

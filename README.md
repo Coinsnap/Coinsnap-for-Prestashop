@@ -1,13 +1,13 @@
 # Coinsnap for Prestashop payment plugin #
-![Coinsnap for PRestashop](https://resources.coinsnap.org/products/prestashop/images/cover.png)
+![Coinsnap for Prestashop](https://resources.coinsnap.org/products/prestashop/images/cover.png)
 
 ## Accept Bitcoin and Lightning Payments with Prestashop ##
 
 * Contributors: coinsnap
 * Tags: Lightning, Lightning Payment, SATS, Satoshi sats, bitcoin, Prestashop, payment gateway, accept bitcoin, bitcoin plugin, bitcoin payment processor, bitcoin e-commerce, Lightning Network, cryptocurrency, lightning payment processor
 * Requires PHP: 7.1
-* Requires Prestashop: 1.7.1 - 8.2.
-* Stable tag: 1.0.8
+* Requires Prestashop: 1.7 - 9.0.
+* Stable tag: 1.1.0
 * License: GPL-2.0
 * License URI: https://github.com/Coinsnap/Coinsnap-for-Prestashop/blob/main/LICENSE
 
@@ -33,7 +33,7 @@ With PrestaShop, web shop owners have full ownership of their online store and a
 
 Coinsnap is a Lightning payment provider and offers a payment gateway for processing Bitcoin and Lightning payments. A merchant only needs a Lightning wallet with a lightning address to accept Bitcoin and Lightning payments on his web store.
 
-In line with the evolving landscape of digital transactions, Coinsnap has developed a complementary plugin that seamlessly enables Bitcoin and Lightning payments via PrestaShop’s robust shop software. The Coinsnap payment plugin was specially developed for PrestaShop and offers merchants a user-friendly interface for optimised Bitcoin payment processing. This innovative module, which is available for free download and installation, integrates seamlessly into the PrestaShop environment. Tested on PrestaShop 1.7+ to 8.1. By using the Coinsnap payment module, PrestaShop shop operators can easily introduce Bitcoin and Lightning payments, expanding their payment options to cater to the different preferences of their customers.
+In line with the evolving landscape of digital transactions, Coinsnap has developed a complementary plugin that seamlessly enables Bitcoin and Lightning payments via PrestaShop’s robust shop software. The Coinsnap payment plugin was specially developed for PrestaShop and offers merchants a user-friendly interface for optimised Bitcoin payment processing. This innovative module, which is available for free download and installation, integrates seamlessly into the PrestaShop environment. Tested on PrestaShop 1.7+ to 9.0. By using the Coinsnap payment module, PrestaShop shop operators can easily introduce Bitcoin and Lightning payments, expanding their payment options to cater to the different preferences of their customers.
 
 If you would like to experience the Bitcoin and Lightning payment process first-hand in a PrestaShop environment, we invite you to visit our PrestaShop demo shop. Here you can initiate a test order with demo data and seamlessly make payments with Bitcoin and Lightning.
 
@@ -181,5 +181,12 @@ Read more about the integration configuration on [our Wiki](https://github.com/C
 
 = 1.0.8 :: 2024-08-23 =
 * Fixed dynamic properties error on PHP 8.2 inside plugins.
+
+= 1.1.0 :: 2025-02-20 =
+* Fixed PHP warnings 
+* Fixed requirement warnings
+* Fixed compatibility warnings
+* Update: Code standards are applied to all the files
+* Update: Add-on is compatible with Prestashop 9.0
 
 

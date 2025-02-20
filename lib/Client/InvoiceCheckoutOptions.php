@@ -17,12 +17,12 @@
  * @license   https://opensource.org/licenses/AFL-3.0 Academic Free License version 3.0
  */
 declare(strict_types=1);
+
 namespace Coinsnap\Client;
 
 if (!defined('_PS_VERSION_')) {
     exit;
 }
-
 
 class InvoiceCheckoutOptions
 {
@@ -74,7 +74,7 @@ class InvoiceCheckoutOptions
                 $speedPolicy,
                 [self::SPEED_HIGH, self::SPEED_MEDIUM, self::SPEED_LOW, self::SPEED_LOWMEDIUM],
                 true
-            )) {
+            )){
                 throw new \InvalidArgumentException('Passed value for speedPolicy is not allowed.');
             }
         }
@@ -176,7 +176,6 @@ class InvoiceCheckoutOptions
             }
             $array[$k] = $v;
         }
-
         return $array;
     }
 }
