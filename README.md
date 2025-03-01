@@ -189,4 +189,6 @@ Read more about the integration configuration on [our Wiki](https://github.com/C
 * Update: Code standards are applied to all the files
 * Update: Add-on is compatible with Prestashop 9.0
 
+= 1.1.1 :: 2025-03-01 =
+* Update: Redirect URL depends on the link rules accepted in the system
 
