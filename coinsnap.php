@@ -314,7 +314,7 @@ class Coinsnap extends PaymentModule
 
     public function getUrl($pay_currency)
     {
-
+        $lang = Tools::strtolower($this->context->language->iso_code);
         $cart = $this->context->cart;
         $customer = new Customer($cart->id_customer);
         $iaddress = new Address($cart->id_address_invoice);
@@ -324,7 +324,7 @@ class Coinsnap extends PaymentModule
         $ps_currency  = new Currency((int)($cart->id_currency));
         $currency_code = $ps_currency->iso_code;
 
-        $redirectUrl =  _PS_BASE_URL_.__PS_BASE_URI__.'index.php?controller=order-confirmation&id_cart='.(int)$cart_id.'&id_module='.(int)$this->id.'&id_order='.(int)$cart_id.'&key='.$cart->secure_key;
+        $redirectUrl = (Configuration::get('PS_REWRITING_SETTINGS') > 0)? _PS_BASE_URL_.__PS_BASE_URI__.$lang.'/order-confirmation?id_cart='.(int)$cart_id.'&id_module='.(int)$this->id.'&id_order='.(int)$cart_id.'&key='.$cart->secure_key : _PS_BASE_URL_.__PS_BASE_URI__.'index.php?controller=order-confirmation&id_cart='.(int)$cart_id.'&id_module='.(int)$this->id.'&id_order='.(int)$cart_id.'&key='.$cart->secure_key;
         $notifyURL  = $this->context->link->getModuleLink('coinsnap', 'notify');
 
         $buyerName =  $iaddress->firstname.' '.$iaddress->lastname;
