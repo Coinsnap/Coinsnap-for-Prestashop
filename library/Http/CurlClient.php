@@ -56,12 +56,8 @@ class CurlClient implements ClientInterface
     /**
      * @inheritdoc
      */
-    public function request(
-        string $method,
-        string $url,
-        array  $headers = [],
-        string $body = ''
-    ): ResponseInterface {
+    public function request(string $method, string $url, array $headers = [], string $body = ''): ResponseInterface
+    {
         $flatHeaders = [];
         foreach ($headers as $key => $value) {
             $flatHeaders[] = $key . ': ' . $value;

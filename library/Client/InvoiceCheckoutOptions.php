@@ -8,9 +8,6 @@
  * that is bundled with this package in the file LICENSE.md.
  * It is also available through the world-wide-web at this URL:
  * https://opensource.org/licenses/AFL-3.0
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to info@coinsnap.io so we can send you a copy immediately.
  *
  * @author    Coinsnap <dev@coinsnap.io>
  * @copyright Since 2023 Coinsnap
@@ -74,7 +71,7 @@ class InvoiceCheckoutOptions
                 $speedPolicy,
                 [self::SPEED_HIGH, self::SPEED_MEDIUM, self::SPEED_LOW, self::SPEED_LOWMEDIUM],
                 true
-            )){
+            )) {
                 throw new \InvalidArgumentException('Passed value for speedPolicy is not allowed.');
             }
         }
@@ -176,6 +173,7 @@ class InvoiceCheckoutOptions
             }
             $array[$k] = $v;
         }
+
         return $array;
     }
 }

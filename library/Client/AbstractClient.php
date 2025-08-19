@@ -8,9 +8,6 @@
  * that is bundled with this package in the file LICENSE.md.
  * It is also available through the world-wide-web at this URL:
  * https://opensource.org/licenses/AFL-3.0
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to info@coinsnap.io so we can send you a copy immediately.
  *
  * @author    Coinsnap <dev@coinsnap.io>
  * @copyright Since 2023 Coinsnap
@@ -79,22 +76,21 @@ class AbstractClient
         return [
             'Accept' => 'application/json',
             'Content-Type' => 'application/json',
-            'x-api-key' => $this->getApiKey()
+            'x-api-key' => $this->getApiKey(),
+            'Authorization' => 'token '.$this->getApiKey()
         ];
     }
 
-    protected function getExceptionByStatusCode(
-        string $method,
-        string $url,
-        Response $response
-    ): RequestException {
+    protected function getExceptionByStatusCode(string $method, string $url, int $status, string $body): RequestException
+    {
+
         $exceptions = [
             ForbiddenException::STATUS => ForbiddenException::class,
             BadRequestException::STATUS => BadRequestException::class,
         ];
 
-        $class = $exceptions[$response->getStatus()] ?? RequestException::class;
-        $e = new $class($method, $url, $response);
+        $class = $exceptions[$status] ?? RequestException::class;
+        $e = new $class($method, $url, $status, $body);
         return $e;
     }
 }

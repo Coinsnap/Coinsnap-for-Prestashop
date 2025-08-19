@@ -17,17 +17,13 @@
  * @license   https://opensource.org/licenses/AFL-3.0 Academic Free License version 3.0
  */
 declare(strict_types=1);
-namespace Coinsnap\Exception;
+
+namespace Coinsnap\Result;
 
 if (!defined('_PS_VERSION_')) {
     exit;
 }
 
-
-class CoinsnapException extends \RuntimeException
+class ApiKey extends AbstractResult
 {
-    public function __construct(string $message, int $code, \Throwable $previous = null)
-    {
-        parent::__construct($message, $code, $previous);
-    }
 }

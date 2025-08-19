@@ -44,6 +44,6 @@ class CoinsnapPaymentModuleFrontController extends ModuleFrontController
         $Coinsnap = new Coinsnap();
         $pay_currency = empty(Tools::getValue('pay_currency')) ? '' : Tools::getValue('pay_currency');
         $url = $Coinsnap->getUrl($pay_currency);
-        Tools::redirect(Tools::safeOutput($url, ''));
+        Tools::redirect(Tools::safeOutput($url, false));
     }
 }

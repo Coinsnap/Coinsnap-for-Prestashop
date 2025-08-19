@@ -13,7 +13,6 @@
  * @copyright Since 2023 Coinsnap
  * @license   https://opensource.org/licenses/AFL-3.0 Academic Free License version 3.0
  */
-
 declare(strict_types=1);
 
 namespace Coinsnap\Client;
@@ -36,7 +35,7 @@ class User extends AbstractClient
                 json_decode($response->getBody(), true, 512, JSON_THROW_ON_ERROR)
             );
         } else {
-            throw $this->getExceptionByStatusCode($method, $url, $response);
+            throw $this->getExceptionByStatusCode($method, $url, (int)$response->getStatus(), $response->getBody());
         }
     }
 
@@ -50,7 +49,7 @@ class User extends AbstractClient
         if ($response->getStatus() === 200) {
             return true;
         } else {
-            throw $this->getExceptionByStatusCode($method, $url, $response);
+            throw $this->getExceptionByStatusCode($method, $url, (int)$response->getStatus(), $response->getBody());
         }
     }
 
@@ -80,7 +79,7 @@ class User extends AbstractClient
                 json_decode($response->getBody(), true, 512, JSON_THROW_ON_ERROR)
             );
         } else {
-            throw $this->getExceptionByStatusCode($method, $url, $response);
+            throw $this->getExceptionByStatusCode($method, $url, (int)$response->getStatus(), $response->getBody());
         }
     }
 
@@ -94,7 +93,7 @@ class User extends AbstractClient
         if ($response->getStatus() === 200) {
             return true;
         } else {
-            throw $this->getExceptionByStatusCode($method, $url, $response);
+            throw $this->getExceptionByStatusCode($method, $url, (int)$response->getStatus(), $response->getBody());
         }
     }
 }

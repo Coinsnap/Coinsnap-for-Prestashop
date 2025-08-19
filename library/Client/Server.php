@@ -8,9 +8,6 @@
  * that is bundled with this package in the file LICENSE.md.
  * It is also available through the world-wide-web at this URL:
  * https://opensource.org/licenses/AFL-3.0
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to info@coinsnap.io so we can send you a copy immediately.
  *
  * @author    Coinsnap <dev@coinsnap.io>
  * @copyright Since 2023 Coinsnap
@@ -23,7 +20,6 @@ namespace Coinsnap\Client;
 if (!defined('_PS_VERSION_')) {
     exit;
 }
-
 use Coinsnap\Result\ServerInfo;
 
 class Server extends AbstractClient
@@ -38,7 +34,7 @@ class Server extends AbstractClient
         if ($response->getStatus() === 200) {
             return new ServerInfo(json_decode($response->getBody(), true, 512, JSON_THROW_ON_ERROR));
         } else {
-            throw $this->getExceptionByStatusCode($method, $url, $response);
+            throw $this->getExceptionByStatusCode($method, $url, (int)$response->getStatus(), $response->getBody());
         }
     }
 
@@ -53,7 +49,7 @@ class Server extends AbstractClient
         if ($response->getStatus() === 200) {
             return true;
         } else {
-            throw $this->getExceptionByStatusCode($method, $url, $response);
+            throw $this->getExceptionByStatusCode($method, $url, (int)$response->getStatus(), $response->getBody());
         }
     }
 }
