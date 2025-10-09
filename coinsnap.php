@@ -38,6 +38,7 @@ class Coinsnap extends PaymentModule
     public string $status_processing;
     public bool $is_eu_compatible;
     public string $autoredirect;
+    public string $returnurl;
     public string $webhook_url;
     public const COINSNAP_WEBHOOK_EVENTS = ['New','Expired','Settled','Processing'];
     public const BTCPAY_WEBHOOK_EVENTS = ['InvoiceCreated','InvoiceExpired','InvoiceSettled','InvoiceProcessing'];
@@ -46,7 +47,7 @@ class Coinsnap extends PaymentModule
     {
         $this->name = 'coinsnap';
         $this->tab = 'payments_gateways';
-        $this->version = '1.2.0';
+        $this->version = '1.2.1';
         $this->author = 'Coinsnap';
         $this->need_instance = 1;
 
@@ -75,6 +76,7 @@ class Coinsnap extends PaymentModule
         $this -> api_key = ($this -> provider === 'coinsnap') ? Configuration::get('COINSNAP_API_KEY') : Configuration::get('BTCPAY_API_KEY');
 
         $this -> autoredirect = Configuration::get('COINSNAP_AUTOREDIRECT');
+        $this -> returnurl = Configuration::get('COINSNAP_RETURNURL');
 
         $this -> status_new = Configuration::get('COINSNAP_STATUS_NEW');
         $this -> status_expired = Configuration::get('COINSNAP_STATUS_EXP');
@@ -287,6 +289,7 @@ class Coinsnap extends PaymentModule
                 Configuration::updateValue('BTCPAY_API_KEY', pSQL(Tools::getValue('btcpay_api_key')));
                 Configuration::updateValue('BTCPAY_STORE_ID', pSQL(Tools::getValue('btcpay_store_id')));
                 Configuration::updateValue('COINSNAP_AUTOREDIRECT', pSQL(Tools::getValue('coinsnap_autoredirect')));
+                Configuration::updateValue('COINSNAP_RETURNURL', pSQL(Tools::getValue('coinsnap_returnurl')));
                 Configuration::updateValue('COINSNAP_STATUS_EXP', pSQL(Tools::getValue('coinsnap_status_expired')));
                 Configuration::updateValue('COINSNAP_STATUS_SET', pSQL(Tools::getValue('coinsnap_status_settled')));
                 Configuration::updateValue('COINSNAP_STATUS_PRO', pSQL(Tools::getValue('coinsnap_status_processing')));
@@ -351,6 +354,7 @@ class Coinsnap extends PaymentModule
             'btcpay_store_id' => Configuration::get('BTCPAY_STORE_ID'),
             'btcpay_api_key' => Configuration::get('BTCPAY_API_KEY'),
             'coinsnap_autoredirect' => Configuration::get('COINSNAP_AUTOREDIRECT'),
+            'coinsnap_returnurl' => Configuration::get('COINSNAP_RETURNURL'),
             'coinsnap_status_new' => $coinsnap_status_new,
             'coinsnap_status_expired' => $coinsnap_status_expired,
             'coinsnap_status_settled' => $coinsnap_status_settled,
@@ -508,15 +512,12 @@ class Coinsnap extends PaymentModule
         $checkInvoice = $this->checkAmount($amount, strtoupper($currency));
 
         if ($checkInvoice['result'] === true) {
-
-            $redirectUrl = (Configuration::get('PS_REWRITING_SETTINGS') > 0) ?
-            _PS_BASE_URL_.__PS_BASE_URI__.$lang.'/order-confirmation?id_cart='.(int)$cart_id.'&id_module='.(int)$this->id.'&id_order='.(int)$cart_id.'&key='.$cart->secure_key :
-            _PS_BASE_URL_.__PS_BASE_URI__.'index.php?controller=order-confirmation&id_cart='.(int)$cart_id.'&id_module='.(int)$this->id.'&id_order='.(int)$cart_id.'&key='.$cart->secure_key;
+            
+            $redirectUrl = (!empty(Configuration::get('COINSNAP_RETURNURL')))? Configuration::get('COINSNAP_RETURNURL') : (
+                (Configuration::get('PS_REWRITING_SETTINGS') > 0) ? _PS_BASE_URL_.__PS_BASE_URI__.$lang.'/order-confirmation?id_cart='.(int)$cart_id.'&id_module='.(int)$this->id.'&id_order='.(int)$cart_id.'&key='.$cart->secure_key : _PS_BASE_URL_.__PS_BASE_URI__.'index.php?controller=order-confirmation&id_cart='.(int)$cart_id.'&id_module='.(int)$this->id.'&id_order='.(int)$cart_id.'&key='.$cart->secure_key);
 
             $buyerName =  $iaddress->firstname.' '.$iaddress->lastname;
             $buyerEmail = $customer->email;
-
-            $camount = \Coinsnap\Util\PreciseNumber::parseFloat((float)$amount, 2);
 
             //  Order saving
             $extra_vars['transaction_id'] = '';
@@ -538,6 +539,16 @@ class Coinsnap extends PaymentModule
 
             $redirectAutomatically = (Configuration::get('COINSNAP_AUTOREDIRECT') > 0) ? true : false;
             $walletMessage = '';
+            
+            // Handle currencies non-supported by BTCPay Server, we need to change them BTC and adjust the amount.
+            if (($currency === 'SATS' || $currency === 'RUB') && $this->provider === 'btcpay') {
+                $currency = 'BTC';
+                $rate = 1/$checkInvoice['rate'];
+                $amountBTC = bcdiv(strval($amount), strval($rate), 8);
+                $amount = (float)$amountBTC;
+            }
+        
+            $camount = ($currency_code === 'BTC')? \Coinsnap\Util\PreciseNumber::parseFloat($amount,8) : \Coinsnap\Util\PreciseNumber::parseFloat($amount,2);
 
             $invoice = $client->createInvoice(
                 $this->store_id,

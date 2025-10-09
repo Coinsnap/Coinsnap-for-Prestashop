@@ -97,6 +97,16 @@
                     <input type="checkbox" value="1" name="coinsnap_autoredirect" id="coinsnap-autoredirect" {if $coinsnap_autoredirect > 0} checked="checked"{/if} />
                 </div>
             </div>
+                
+            <div class="form-group">          
+                <label class="control-label col-lg-3" for="btcpay-api-key">{l s='Return URL after payment:' mod='coinsnap'}</label>
+                <div class="col-lg-3">
+                    <div class="input-group">
+                        <span class="input-group-addon"><i class="icon icon-link"></i></span>
+                        <input type="text" class="text" name="coinsnap_returnurl" id="coinsnap-returnurl" value="{$coinsnap_returnurl|escape:'htmlall':'UTF-8'}" />
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 

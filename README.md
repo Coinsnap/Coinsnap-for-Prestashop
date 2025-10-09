@@ -7,7 +7,7 @@
 * Tags: Lightning, Lightning Payment, SATS, Satoshi sats, bitcoin, Prestashop, payment gateway, accept bitcoin, bitcoin plugin, bitcoin payment processor, bitcoin e-commerce, Lightning Network, cryptocurrency, lightning payment processor
 * Requires PHP: 7.1
 * Requires Prestashop: 1.7 - 9.0.
-* Stable tag: 1.2.0
+* Stable tag: 1.2.1
 * License: GPL-2.0
 * License URI: https://github.com/Coinsnap/Coinsnap-for-Prestashop/blob/main/LICENSE
 
@@ -197,3 +197,8 @@ Read more about the integration configuration on [our Wiki](https://github.com/C
 * Update: Minimum payment amount calculation system added
 * Update: Webhook payload functionality
 * Update: Tested compatibility with Prestashop 9.0.0
+
+#### 1.2.1 :: 2025-10-09
+* Update: Added non-supported by BTCPay server currencies handler on invoice request flow.
+* Update: Added custom redirect after payment page in module settings.
+* Update: Added autoredirect after payment checkbox in module settings.
