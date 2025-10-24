@@ -38,6 +38,11 @@ class Coinsnap extends PaymentModule
     public string $status_processing;
     public bool $is_eu_compatible;
     public string $autoredirect;
+    public bool $discount_enabled;
+    public string $discount_type;
+    public float $discount_amount;
+    public float $discount_amount_limit;
+    public float $discount_percentage;
     public string $returnurl;
     public string $webhook_url;
     public const COINSNAP_WEBHOOK_EVENTS = ['New','Expired','Settled','Processing'];
@@ -47,7 +52,7 @@ class Coinsnap extends PaymentModule
     {
         $this->name = 'coinsnap';
         $this->tab = 'payments_gateways';
-        $this->version = '1.2.1';
+        $this->version = '1.3.0';
         $this->author = 'Coinsnap';
         $this->need_instance = 1;
 
@@ -77,6 +82,12 @@ class Coinsnap extends PaymentModule
 
         $this -> autoredirect = Configuration::get('COINSNAP_AUTOREDIRECT');
         $this -> returnurl = Configuration::get('COINSNAP_RETURNURL');
+        
+        $this -> discount_enabled = Configuration::get('COINSNAP_DISCOUNT_ENABLED');
+        $this -> discount_type = Configuration::get('COINSNAP_DISCOUNT_TYPE');
+        $this -> discount_amount = Configuration::get('COINSNAP_DISCOUNT_AMOUNT');
+        $this -> discount_amount_limit = Configuration::get('COINSNAP_DISCOUNT_LIMIT');
+        $this -> discount_percentage = Configuration::get('COINSNAP_DISCOUNT_PERCENTAGE');
 
         $this -> status_new = Configuration::get('COINSNAP_STATUS_NEW');
         $this -> status_expired = Configuration::get('COINSNAP_STATUS_EXP');
@@ -290,6 +301,14 @@ class Coinsnap extends PaymentModule
                 Configuration::updateValue('BTCPAY_STORE_ID', pSQL(Tools::getValue('btcpay_store_id')));
                 Configuration::updateValue('COINSNAP_AUTOREDIRECT', pSQL(Tools::getValue('coinsnap_autoredirect')));
                 Configuration::updateValue('COINSNAP_RETURNURL', pSQL(Tools::getValue('coinsnap_returnurl')));
+                
+                Configuration::updateValue('COINSNAP_DISCOUNT_ENABLED', pSQL(Tools::getValue('coinsnap_discount_enabled')));
+                Configuration::updateValue('COINSNAP_DISCOUNT_TYPE', pSQL(Tools::getValue('coinsnap_discount_type')));
+                Configuration::updateValue('COINSNAP_DISCOUNT_AMOUNT', pSQL(Tools::getValue('coinsnap_discount_amount')));
+                Configuration::updateValue('COINSNAP_DISCOUNT_LIMIT', pSQL(Tools::getValue('coinsnap_discount_amount_limit')));
+                Configuration::updateValue('COINSNAP_DISCOUNT_PERCENTAGE', pSQL(Tools::getValue('coinsnap_discount_percentage')));
+                
+                
                 Configuration::updateValue('COINSNAP_STATUS_EXP', pSQL(Tools::getValue('coinsnap_status_expired')));
                 Configuration::updateValue('COINSNAP_STATUS_SET', pSQL(Tools::getValue('coinsnap_status_settled')));
                 Configuration::updateValue('COINSNAP_STATUS_PRO', pSQL(Tools::getValue('coinsnap_status_processing')));
@@ -355,6 +374,13 @@ class Coinsnap extends PaymentModule
             'btcpay_api_key' => Configuration::get('BTCPAY_API_KEY'),
             'coinsnap_autoredirect' => Configuration::get('COINSNAP_AUTOREDIRECT'),
             'coinsnap_returnurl' => Configuration::get('COINSNAP_RETURNURL'),
+            
+            'coinsnap_discount_enabled' => Configuration::get('COINSNAP_DISCOUNT_ENABLED'),
+            'coinsnap_discount_type' => Configuration::get('COINSNAP_DISCOUNT_TYPE'),
+            'coinsnap_discount_amount' => Configuration::get('COINSNAP_DISCOUNT_AMOUNT'),
+            'coinsnap_discount_amount_limit' => Configuration::get('COINSNAP_DISCOUNT_LIMIT'),
+            'coinsnap_discount_percentage' => Configuration::get('COINSNAP_DISCOUNT_PERCENTAGE'),
+            
             'coinsnap_status_new' => $coinsnap_status_new,
             'coinsnap_status_expired' => $coinsnap_status_expired,
             'coinsnap_status_settled' => $coinsnap_status_settled,

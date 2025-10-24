@@ -22,6 +22,45 @@ jQuery(document).ready(function ($) {
         });
     }
     
+    if($('#coinsnap_discount_enabled').length){
+        
+        enableDiscount();
+        
+        $('#coinsnap_discount_enabled').change(function(){
+            enableDiscount();
+        });
+        
+        $('#coinsnap_discount_amount_limit').change(function(){
+            if(parseFloat($(this).val()) < 0){
+                $(this).val(0);
+            }
+            if(parseFloat($(this).val()) > 100){
+                $(this).val(100);
+            }
+        });
+        
+        $('#coinsnap_discount_percentage').change(function(){
+            if(parseFloat($(this).val()) < 0){
+                $(this).val(0);
+            }
+            if(parseFloat($(this).val()) > 100){
+                $(this).val(100);
+            }
+        });
+        
+        $('.discount input').keyup(function() {
+            $(this).val($(this).val().replace(/[^0-9,]/g,''));
+        });
+        
+        if($('#coinsnap_discount_enabled').prop('checked')){
+            setDiscount();
+        }
+        
+        $('#coinsnap_discount_type').change(function(){
+            setDiscount();
+        });
+    }
+    
     function setProvider(){
         if($('#coinsnap_provider').val() !== 'btcpay'){
             $('.form-group.btcpay').hide();
@@ -34,6 +73,27 @@ jQuery(document).ready(function ($) {
             $('.form-group.coinsnap input[type=text]').removeAttr('required');
             $('.form-group.btcpay').show();
             $('.form-group.btcpay input[type=text]').attr('required','required');
+        }
+    }
+    
+    function enableDiscount(){
+        if($('#coinsnap_discount_enabled').prop('checked')){
+            $('.discount').show();
+            setDiscount();
+        }
+        else {
+            $('.discount').hide();
+        }
+    }
+    
+    function setDiscount(){
+        if($('#coinsnap_discount_type').val() === 'fixed'){
+            $('.discount.discount-percentage').hide();
+            $('.discount.discount-amount').show();
+        }
+        else {
+            $('.discount.discount-amount').hide();
+            $('.discount.discount-percentage').show();
         }
     }
 });
