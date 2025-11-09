@@ -123,7 +123,7 @@ class Coinsnap extends PaymentModule
     
     public function hookActionCartSave($params){
         
-        $discount_enabled = (null !== $this -> discount_enabled && $this -> discount_enabled > 0)? true : false;
+        $discount_enabled = (null !== $this->discount_enabled && $this->discount_enabled)? true : false;        
         
         if($discount_enabled){
             
@@ -144,50 +144,50 @@ class Coinsnap extends PaymentModule
             $isDiscount = false;
             
             if($discount_type === 'fixed' && floatval($this -> discount_amount) > 0){
-                    $discount_amount = round(floatval($this -> discount_amount),2);
-                    $discount_amount_limit = floatval($this -> discount_amount_limit);
-                    
-                    
-
-                    if($discount_amount > 0 && $discount_amount_limit > 0 && $discount_amount_limit < 100){
-                        if($discount_amount > ($total * $discount_amount_limit / 100)){
-                            $discount_amount = round($total * $discount_amount_limit / 100,2);
-                        }
-                        if($discount_amount < $total){
-                            $isDiscount = true;
-                            $discount_title = '-'. $discount_amount . ' ' . $currency;
-                        }
+                
+                $cart->addCartRule($cartRule->id);
+                
+                $discount_amount = round(floatval($this -> discount_amount),2);
+                $discount_amount_limit = floatval($this -> discount_amount_limit);
+                
+                if($discount_amount_limit >= 0 && $discount_amount_limit < 100){
+                    if($discount_amount > ($total * $discount_amount_limit / 100)){
+                        $discount_amount = round($total * $discount_amount_limit / 100,2);
                     }
+                        
+                    if($discount_amount < $total){
+                        $isDiscount = true;
+                        $discount_title = '';
+                    }
+                }
             }
-            elseif(null !== $this -> discount_amount_percentage) {
-                    $discount_percentage = $this -> discount_amount_percentage;
+            elseif($this -> discount_percentage > 0) {
+                    $discount_percentage = $this -> discount_percentage;
 
                     if($discount_percentage > 0 && $discount_percentage < 100){
-                        $discount_amount = $total * $discount_percentage / 100;
                         $isDiscount = true;
-                        $discount_title = '-'. $discount_percentage . '%';
+                        $discount_title = ' '.$discount_percentage . '%';
                     }
             }
             if($isDiscount){
-                $discount = -abs($discount_amount);
-
+                
+                
+                
                 $cartRule = new CartRule();
-                $cartRule->name = array_fill_keys(Language::getIDs(false), $discount_title);
+                $cartRule->name = array_fill_keys(Language::getIDs(false), 'Bitcoin discount' . $discount_title);
                 $cartRule->code = 'BitcoinDiscount';
                 
                 if($discount_type === 'fixed'){
                     $cartRule->reduction_amount = $discount_amount;
-                    $cartRule->reduction_currency = $ps_currency;
+                    //$cartRule->reduction_currency = $ps_currency;
                 }
                 else {
                     $cartRule->reduction_percent = $discount_percentage;
                 }
                 
-                $cartRule->quantity = 99999;
-                $cartRule->quantity_per_user = 99999;
                 $cartRule->date_from = date('Y-m-d H:i:s', strtotime('-1 day'));
                 $cartRule->date_to = date('Y-m-d H:i:s', strtotime('+1 year'));
-                $cartRule->active = 1;
+                $cartRule->active = true;
                 $cartRule->add();
 
                 $cart->addCartRule($cartRule->id);                    
