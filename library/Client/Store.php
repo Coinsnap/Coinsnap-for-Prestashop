@@ -76,6 +76,47 @@ class Store extends AbstractClient{
      * For BTCPay server only
      * @return \Coinsnap\Result\Store[int $code, array $result]
      */
+    public function getStoreCurrenciesRates($storeId, $currencies = ['EUR','USD']): \Coinsnap\Result\Store {
+        $url = $this->getApiUrl().COINSNAP_SERVER_PATH.'/' . urlencode($storeId) . '/rates?';
+        $headers = $this->getRequestHeaders();
+        $method = 'GET';
+        $currenciesArray = [];
+        
+        foreach($currencies as $currency){
+            $currenciesArray[] = 'currencyPair=BTC_'.$currency;
+        }
+        
+        $response = $this->getHttpClient()->request($method, $url.implode('&',$currenciesArray), $headers);
+        if ($response->getStatus() === 200) {
+
+            $json_decode = json_decode($response->getBody(), true, 512, JSON_INVALID_UTF8_IGNORE);
+
+            $result['currencies'] = [];
+            if(count($json_decode) > 0){
+                foreach($json_decode as $currency){
+                    if(empty($currency['errors'])){
+                        $result['currencies'][$currency["currencyPair"]] = $currency["rate"];
+                    } 
+                }
+            }
+            
+            if(count($result['currencies']) < 1) {
+                $result['error'] = 'NOT_LOADED';
+                $result['response'] = $response->getBody();
+                $result['url'] = $url;
+            }
+            
+            return new \Coinsnap\Result\Store(array('code' => $response->getStatus(), 'result' => $result));
+        }
+        else {
+            throw $this->getExceptionByStatusCode(esc_html($method), esc_url($url), (int)esc_html($response->getStatus()), esc_html($response->getBody()));
+        }
+    }
+
+    /**
+     * For BTCPay server only
+     * @return \Coinsnap\Result\Store[int $code, array $result]
+     */
     public function getStorePaymentMethods($storeId): \Coinsnap\Result\Store {
         
         $url = $this->getApiUrl().COINSNAP_SERVER_PATH.'/' . urlencode($storeId) . '/payment-methods';
@@ -112,7 +153,7 @@ class Store extends AbstractClient{
             return new \Coinsnap\Result\Store(array('code' => $response->getStatus(), 'result' => $result));
         }
         else {
-            throw $this->getExceptionByStatusCode($method, $url, (int)$response->getStatus(), $response->getBody());
+            throw $this->getExceptionByStatusCode(esc_html($method), esc_url($url), (int)esc_html($response->getStatus()), esc_html($response->getBody()));
         }
     }
 }

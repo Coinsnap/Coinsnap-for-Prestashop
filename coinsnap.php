@@ -85,9 +85,9 @@ class Coinsnap extends PaymentModule
         
         $this -> discount_enabled = Configuration::get('COINSNAP_DISCOUNT_ENABLED');
         $this -> discount_type = Configuration::get('COINSNAP_DISCOUNT_TYPE');
-        $this -> discount_amount = Configuration::get('COINSNAP_DISCOUNT_AMOUNT');
-        $this -> discount_amount_limit = Configuration::get('COINSNAP_DISCOUNT_LIMIT');
-        $this -> discount_percentage = Configuration::get('COINSNAP_DISCOUNT_PERCENTAGE');
+        $this -> discount_amount = floatval(Configuration::get('COINSNAP_DISCOUNT_AMOUNT'));
+        $this -> discount_amount_limit = floatval(Configuration::get('COINSNAP_DISCOUNT_LIMIT'));
+        $this -> discount_percentage = floatval(Configuration::get('COINSNAP_DISCOUNT_PERCENTAGE'));
 
         $this -> status_new = Configuration::get('COINSNAP_STATUS_NEW');
         $this -> status_expired = Configuration::get('COINSNAP_STATUS_EXP');
@@ -110,12 +110,90 @@ class Coinsnap extends PaymentModule
             return false;
         }
 
+        if (!$this->registerHook('actionCartSave')) {
+            return false;
+        }
+
         if (!$this->registerHook('actionAdminControllerSetMedia')) {
             return false;
         }
 
         return true;
     }
+    
+    public function hookActionCartSave($params){
+        
+        $discount_enabled = (null !== $this -> discount_enabled && $this -> discount_enabled > 0)? true : false;
+        
+        if($discount_enabled){
+            
+            $cart = $params['cart'];
+            $total = $cart->getOrderTotal(false, Cart::ONLY_PRODUCTS);
+            $existingRules = $cart->getCartRules();
+            $ps_currency  = new Currency((int)($cart->id_currency));
+            $currency = $ps_currency->iso_code;
+            
+            // Avoid applying the same discount twice
+            foreach ($existingRules as $rule) {
+                if ($rule['code'] == 'BitcoinDiscount') {
+                    $cart->removeCartRule($rule['id_cart_rule']);
+                }
+            }
+            
+            $discount_type = $this -> discount_type;
+            $isDiscount = false;
+            
+            if($discount_type === 'fixed' && floatval($this -> discount_amount) > 0){
+                    $discount_amount = round(floatval($this -> discount_amount),2);
+                    $discount_amount_limit = floatval($this -> discount_amount_limit);
+                    
+                    
+
+                    if($discount_amount > 0 && $discount_amount_limit > 0 && $discount_amount_limit < 100){
+                        if($discount_amount > ($total * $discount_amount_limit / 100)){
+                            $discount_amount = round($total * $discount_amount_limit / 100,2);
+                        }
+                        if($discount_amount < $total){
+                            $isDiscount = true;
+                            $discount_title = '-'. $discount_amount . ' ' . $currency;
+                        }
+                    }
+            }
+            elseif(null !== $this -> discount_amount_percentage) {
+                    $discount_percentage = $this -> discount_amount_percentage;
+
+                    if($discount_percentage > 0 && $discount_percentage < 100){
+                        $discount_amount = $total * $discount_percentage / 100;
+                        $isDiscount = true;
+                        $discount_title = '-'. $discount_percentage . '%';
+                    }
+            }
+            if($isDiscount){
+                $discount = -abs($discount_amount);
+
+                $cartRule = new CartRule();
+                $cartRule->name = array_fill_keys(Language::getIDs(false), $discount_title);
+                $cartRule->code = 'BitcoinDiscount';
+                
+                if($discount_type === 'fixed'){
+                    $cartRule->reduction_amount = $discount_amount;
+                    $cartRule->reduction_currency = $ps_currency;
+                }
+                else {
+                    $cartRule->reduction_percent = $discount_percentage;
+                }
+                
+                $cartRule->quantity = 99999;
+                $cartRule->quantity_per_user = 99999;
+                $cartRule->date_from = date('Y-m-d H:i:s', strtotime('-1 day'));
+                $cartRule->date_to = date('Y-m-d H:i:s', strtotime('+1 year'));
+                $cartRule->active = 1;
+                $cartRule->add();
+
+                $cart->addCartRule($cartRule->id);                    
+            }            
+        }
+    }    
 
     public function hookActionAdminControllerSetMedia(array $params)
     {
@@ -563,18 +641,33 @@ class Coinsnap extends PaymentModule
                 $metadata['orderId'] = $order_id;
             }
 
-            $redirectAutomatically = (Configuration::get('COINSNAP_AUTOREDIRECT') > 0) ? true : false;
+            $redirectAutomatically = ($this->coinsnap_autoredirect > 0) ? true : false;
             $walletMessage = '';
             
             // Handle currencies non-supported by BTCPay Server, we need to change them BTC and adjust the amount.
-            if (($currency === 'SATS' || $currency === 'RUB') && $this->provider === 'btcpay') {
-                $currency = 'BTC';
-                $rate = 1/$checkInvoice['rate'];
-                $amountBTC = bcdiv(strval($amount), strval($rate), 8);
-                $amount = (float)$amountBTC;
+            if ($currency !== 'BTC' && $this->provider === 'btcpay') {
+                $store = new \Coinsnap\Client\Store($this->api_url, $this->api_key);
+                $btcpayCurrencies = $store -> getStoreCurrenciesRates($this->store_id,array($currency));
+                $isCurrency = true;
+                if(!isset($btcpayCurrencies['result']['error']) && count($btcpayCurrencies['result']['currencies'])>0){
+                    if(!isset($btcpayCurrencies['result']['currencies']['BTC_'.$currency])){
+                        $isCurrency = false;
+                    }
+                }
+                else {
+                    $isCurrency = false;
+                }
+                    
+                // Handle currencies non-supported by BTCPay Server, we need to change them BTC and adjust the amount.
+                if( !$isCurrency ){
+                    $currency = 'BTC';
+                    $rate = 1/$checkInvoice['rate'];
+                    $amountBTC = bcdiv(strval($amount), strval($rate), 8);
+                    $amount = (float)$amountBTC;
+                }
             }
         
-            $camount = ($currency_code === 'BTC')? \Coinsnap\Util\PreciseNumber::parseFloat($amount,8) : \Coinsnap\Util\PreciseNumber::parseFloat($amount,2);
+            $camount = ($currency === 'BTC')? \Coinsnap\Util\PreciseNumber::parseFloat($amount,8) : \Coinsnap\Util\PreciseNumber::parseFloat($amount,2);
 
             $invoice = $client->createInvoice(
                 $this->store_id,
