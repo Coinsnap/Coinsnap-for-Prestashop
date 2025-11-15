@@ -717,26 +717,20 @@ class Coinsnap extends PaymentModule
     public function webhookExists(string $apiUrl, string $apiKey, string $storeId): bool
     {
         $whClient = new \Coinsnap\Client\Webhook($apiUrl, $apiKey);
-        $webhook = Configuration::get('COINSNAP_WEBHOOK');
-                
-        if ($storedWebhook = json_decode($webhook, true)) {
-
-            try {
-                $existingWebhook = $whClient->getWebhook($storeId, $storedWebhook['id']);
-
-                if ($existingWebhook->getData()['id'] === $storedWebhook['id'] && strpos($existingWebhook->getData()['url'], $storedWebhook['url']) !== false) {
-                    return true;
-                }
-            } catch (\Throwable $e) {
-                $errorMessage = 'Error fetching existing Webhook. Message: ' .$e->getMessage();
-                return false;
-            }
-        }
+        $storedWebhook = json_decode(Configuration::get('COINSNAP_WEBHOOK'),true);
+        $isWebhook = false;
+        
         try {
             $storeWebhooks = $whClient->getWebhooks($storeId);
             foreach ($storeWebhooks as $webhook) {
-                if (strpos($webhook->getData()['url'], $this->webhook_url) !== false) {
-                    $whClient->deleteWebhook($storeId, $webhook->getData()['id']);
+                if (strpos($webhook->getData()['url'], $this -> webhook_url) !== false) {
+                    
+                    if ($storedWebhook && is_array($storedWebhook) && $webhook->getData()['id'] === $storedWebhook['id']){
+                        $isWebhook = true;
+                    }
+                    else {
+                        $whClient->deleteWebhook($storeId, $webhook->getData()['id']);
+                    }
                 }
             }
         } catch (\Throwable $e) {
@@ -744,7 +738,7 @@ class Coinsnap extends PaymentModule
             return false;
         }
 
-        return false;
+        return $isWebhook;
     }
 
     public function registerWebhook(string $apiUrl, string $apiKey, string $storeId, string $provider = 'coinsnap')
