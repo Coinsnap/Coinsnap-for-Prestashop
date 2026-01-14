@@ -202,3 +202,7 @@ Read more about the integration configuration on [our Wiki](https://github.com/C
 * Update: Added non-supported by BTCPay server currencies handler on invoice request flow.
 * Update: Added custom redirect after payment page in module settings.
 * Update: Added autoredirect after payment checkbox in module settings.
+
+#### 1.3.0 :: 2025-11-15
+* Update: Added Bitcoin discount (amount or percents) on checkout.
+* Update: Stored webhooks filtration.

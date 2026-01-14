@@ -109,8 +109,64 @@
             </div>
         </div>
     </div>
-
+                    
     <div class="panel" id="fieldset_1">    
+        <div class="panel-heading">
+        <i class="icon-tag"></i>{l s='Discount settings' mod='coinsnap'}
+        </div>    
+
+        <div class="form-wrapper">
+            
+            <div class="form-group">          
+                <label class="control-label col-lg-3" for="coinsnap_discount_enabled">{l s='Discount enabled:' mod='coinsnap'}</label>
+                <div class="col-lg-3">
+                    <input type="checkbox" value="1" name="coinsnap_discount_enabled" id="coinsnap_discount_enabled" {if $coinsnap_discount_enabled > 0} checked="checked"{/if} />
+                </div>
+            </div>
+
+            <div class="form-group discount">                    
+                <label class="control-label col-lg-3" for="coinsnap_discount_type">{l s='Discount type:' mod='coinsnap'}</label>                                
+                <div class="col-lg-3">
+                    <select name="coinsnap_discount_type" id="coinsnap_discount_type" class="form-control">
+                        <option value="fixed" {if 'fixed' == $coinsnap_discount_type} selected="selected"{/if}>{l s='Fixed' mod='coinsnap'}</option>
+                        <option value="percentage" {if 'percentage' == $coinsnap_discount_type} selected="selected"{/if}>{l s='Percentage' mod='coinsnap'}</option>
+                    </select>             
+                </div>
+            </div>
+
+            <div class="form-group discount discount-amount">            
+                <label class="control-label col-lg-3" for="coinsnap_discount_amount">{l s='Discount amount:' mod='coinsnap'}</label>
+                <div class="col-lg-3">
+                    <div class="input-group">
+                        <span class="input-group-addon"><i class="icon icon-tag"></i></span>
+                        <input type="number" min="0" step="0.01" class="text" name="coinsnap_discount_amount" id="coinsnap_discount_amount" value="{$coinsnap_discount_amount|escape:'htmlall':'UTF-8'}" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group discount discount-amount">          
+                <label class="control-label col-lg-3" for="coinsnap_discount_amount_limit">{l s='Max discount amount, %:' mod='coinsnap'}</label>
+                <div class="col-lg-3">
+                    <div class="input-group">
+                        <span class="input-group-addon"><i class="icon icon-tag"></i></span>
+                        <input type="number" min="0" max="100" step="0.01" class="text" name="coinsnap_discount_amount_limit" id="coinsnap_discount_amount_limit" value="{$coinsnap_discount_amount_limit|escape:'htmlall':'UTF-8'}" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group discount discount-percentage">            
+                <label  class="control-label col-lg-3" for="coinsnap_discount_percentage">{l s='Discount amount, %:' mod='coinsnap'}</label>
+                <div class="col-lg-3">
+                    <div class="input-group">
+                        <span class="input-group-addon"><i class="icon icon-tag"></i></span>
+                        <input type="number" min="0" max="100" step="0.01" class="text" name="coinsnap_discount_percentage" id="coinsnap_discount_percentage" value="{$coinsnap_discount_percentage|escape:'htmlall':'UTF-8'}" />
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel" id="fieldset_2">    
         <div class="panel-heading">
         <i class="icon-shopping-cart"></i>{l s='Order Status' mod='coinsnap'}
         </div>    
