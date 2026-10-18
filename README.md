@@ -6,7 +6,7 @@
 
 Coinsnap for PrestaShop is an open-source Bitcoin payment module for PrestaShop stores. It integrates Bitcoin payments into the existing PrestaShop checkout and order workflow.
 
-The current module supports **PrestaShop 1.7 through 9.0** and can be used with either **Coinsnap** or **BTCPay Server** as the Bitcoin payment backend.
+The current module supports **PrestaShop 1.7 through 9.2** and can be used with either **Coinsnap** or **BTCPay Server** as the Bitcoin payment backend.
 
 Coinsnap is **Bitcoin payment software for merchants** and a brand of **Onlineshop24 d.o.o., Serbia**.
 
@@ -20,14 +20,14 @@ Coinsnap is **Bitcoin payment software for merchants** and a brand of **Onlinesh
 - Custom redirect after payment
 - Optional automatic redirect after payment
 - Webhook-based payment status updates
-- Support for PrestaShop **1.7 to 9.0**
+- Support for PrestaShop **1.7 to 9.2**
 - Open source under the MIT License
 
 ## Requirements
 
-The current module release is **1.2.1** and supports:
+The current module release is **1.3.2** and supports:
 
-- **PrestaShop 1.7 through 9.0**
+- **PrestaShop 1.7 through 9.2**
 - **PHP 7.1 or newer**
 - A **Coinsnap merchant account**, or
 - Your own **BTCPay Server**
@@ -114,7 +114,7 @@ You need a compatible PrestaShop installation and either a Coinsnap merchant acc
 
 ### Which PrestaShop versions are supported?
 
-The current module supports PrestaShop **1.7 through 9.0**.
+The current module supports PrestaShop **1.7 through 9.2**.
 
 ### Can I use my own BTCPay Server instead of Coinsnap?
 
@@ -148,6 +148,20 @@ Use the support area in your Coinsnap merchant account or join the official [Coi
 
 ## Changelog
 
+#### 1.3.2 :: 2026-10-18
+* Fixed "PaymentModule::validateOrder - Order Status cannot be loaded" error on checkout.
+* Fixed bug with automatic redirect after payment.
+* Update: Tested compatibility with Prestashop 9.2.0
+
+#### 1.3.1 :: 2026-04-10
+* Fixed bug with currency check.
+* Updated Coinsnap PHP Library.
+* Update: Tested compatibility with Prestashop 9.1.1
+
+#### 1.3.0 :: 2025-11-15
+* Update: Added Bitcoin discount (amount or percents) on checkout.
+* Update: Stored webhooks filtration.
+
 ### 1.2.1 — 2025-10-09
 
 - Added handling for currencies not supported by BTCPay Server during invoice creation.
@@ -159,7 +173,6 @@ Use the support area in your Coinsnap merchant account or join the official [Coi
 - Added BTCPay Server as a Bitcoin payment gateway.
 - Added minimum payment amount calculation.
 - Added webhook processing.
-- Tested compatibility with PrestaShop 9.0.0.
 
 ### 1.1.1 — 2025-03-01
 
