@@ -213,6 +213,6 @@ Read more about the integration configuration on [our Wiki](https://github.com/C
 * Update: Tested compatibility with Prestashop 9.1.1
 
 #### 1.3.2 :: 2026-10-18
-* Fixed PaymentModule::validateOrder - Order Status cannot be loaded error on checkout.
+* Fixed "PaymentModule::validateOrder - Order Status cannot be loaded" error on checkout.
 * Fixed bug with automatic redirect after payment.
-* Update: Tested compatibility with Prestashop 9.2
+* Update: Tested compatibility with Prestashop 9.2.0
