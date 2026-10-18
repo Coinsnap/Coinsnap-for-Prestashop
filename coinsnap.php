@@ -37,7 +37,7 @@ class Coinsnap extends PaymentModule
     public string $status_settled;
     public string $status_processing;
     public bool $is_eu_compatible;
-    public string $autoredirect;
+    public bool $autoredirect;
     public bool $discount_enabled;
     public string $discount_type;
     public float $discount_amount;
@@ -52,7 +52,7 @@ class Coinsnap extends PaymentModule
     {
         $this->name = 'coinsnap';
         $this->tab = 'payments_gateways';
-        $this->version = '1.3.0';
+        $this->version = '1.3.2';
         $this->author = 'Coinsnap';
         $this->need_instance = 1;
 
@@ -64,7 +64,6 @@ class Coinsnap extends PaymentModule
             'min' => '1.7.0.0',
             'max' => _PS_VERSION_
         );
-
 
         parent::__construct();
 
@@ -80,7 +79,7 @@ class Coinsnap extends PaymentModule
         $this -> store_id = ($this -> provider === 'coinsnap') ? Configuration::get('COINSNAP_STORE_ID') : Configuration::get('BTCPAY_STORE_ID');
         $this -> api_key = ($this -> provider === 'coinsnap') ? Configuration::get('COINSNAP_API_KEY') : Configuration::get('BTCPAY_API_KEY');
 
-        $this -> autoredirect = Configuration::get('COINSNAP_AUTOREDIRECT');
+        $this -> autoredirect = (Configuration::get('COINSNAP_AUTOREDIRECT') > 0)? true : false;
         $this -> returnurl = Configuration::get('COINSNAP_RETURNURL');
         
         $this -> discount_enabled = Configuration::get('COINSNAP_DISCOUNT_ENABLED');
@@ -123,9 +122,9 @@ class Coinsnap extends PaymentModule
     
     public function hookActionCartSave($params){
         
-        $discount_enabled = (null !== $this->discount_enabled && $this->discount_enabled)? true : false;        
+        $bitcoin_discount_enabled = (null !== $this->discount_enabled && (int)$this->discount_enabled > 0)? true : false;        
         
-        if($discount_enabled){
+        if($bitcoin_discount_enabled){
             
             $cart = $params['cart'];
             $total = $cart->getOrderTotal(false, Cart::ONLY_PRODUCTS);
@@ -387,6 +386,7 @@ class Coinsnap extends PaymentModule
                 Configuration::updateValue('COINSNAP_DISCOUNT_PERCENTAGE', pSQL(Tools::getValue('coinsnap_discount_percentage')));
                 
                 
+                Configuration::updateValue('COINSNAP_STATUS_NEW', pSQL(Tools::getValue('coinsnap_status_new')));
                 Configuration::updateValue('COINSNAP_STATUS_EXP', pSQL(Tools::getValue('coinsnap_status_expired')));
                 Configuration::updateValue('COINSNAP_STATUS_SET', pSQL(Tools::getValue('coinsnap_status_settled')));
                 Configuration::updateValue('COINSNAP_STATUS_PRO', pSQL(Tools::getValue('coinsnap_status_processing')));
@@ -625,13 +625,16 @@ class Coinsnap extends PaymentModule
 
             //  Order saving
             $extra_vars['transaction_id'] = '';
+            
+            PrestaShopLogger::addLog( 'Coinsnap: state ID = ' . (int)$this->status_new, 1);
+            
             $this->validateOrder((int)$cart_id, (int)$this->status_new, (float)$amount, $this->displayName, null, $extra_vars, null, false, $cart->secure_key);
 
             $order_id = Order::getIdByCartId($cart_id).'';
             $order = new Order((int)$order_id);
             $order_number = $order->reference;
 
-            $this->add_log('notification', 'Order Number: '.$order->reference.'('.$order_id.')') ;
+            //$this->add_log('notification', 'Order Number: '.$order->reference.'('.$order_id.')') ;
 
             $metadata = [];
             $metadata['orderNumber'] = $order_number;
@@ -640,8 +643,8 @@ class Coinsnap extends PaymentModule
             if ($this->provider === 'btcpay') {
                 $metadata['orderId'] = $order_id;
             }
-
-            $redirectAutomatically = ($this->coinsnap_autoredirect > 0) ? true : false;
+            
+            $redirectAutomatically = $this->autoredirect;
             $walletMessage = '';
             
             // Handle currencies non-supported by BTCPay Server, we need to change them BTC and adjust the amount.
