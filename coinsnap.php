@@ -38,6 +38,11 @@ class Coinsnap extends PaymentModule
     public string $status_processing;
     public bool $is_eu_compatible;
     public string $autoredirect;
+    public bool $discount_enabled;
+    public string $discount_type;
+    public float $discount_amount;
+    public float $discount_amount_limit;
+    public float $discount_percentage;
     public string $returnurl;
     public string $webhook_url;
     public const COINSNAP_WEBHOOK_EVENTS = ['New','Expired','Settled','Processing'];
@@ -47,7 +52,7 @@ class Coinsnap extends PaymentModule
     {
         $this->name = 'coinsnap';
         $this->tab = 'payments_gateways';
-        $this->version = '1.2.1';
+        $this->version = '1.3.0';
         $this->author = 'Coinsnap';
         $this->need_instance = 1;
 
@@ -77,6 +82,12 @@ class Coinsnap extends PaymentModule
 
         $this -> autoredirect = Configuration::get('COINSNAP_AUTOREDIRECT');
         $this -> returnurl = Configuration::get('COINSNAP_RETURNURL');
+        
+        $this -> discount_enabled = Configuration::get('COINSNAP_DISCOUNT_ENABLED');
+        $this -> discount_type = Configuration::get('COINSNAP_DISCOUNT_TYPE');
+        $this -> discount_amount = floatval(Configuration::get('COINSNAP_DISCOUNT_AMOUNT'));
+        $this -> discount_amount_limit = floatval(Configuration::get('COINSNAP_DISCOUNT_LIMIT'));
+        $this -> discount_percentage = floatval(Configuration::get('COINSNAP_DISCOUNT_PERCENTAGE'));
 
         $this -> status_new = Configuration::get('COINSNAP_STATUS_NEW');
         $this -> status_expired = Configuration::get('COINSNAP_STATUS_EXP');
@@ -99,12 +110,90 @@ class Coinsnap extends PaymentModule
             return false;
         }
 
+        if (!$this->registerHook('actionCartSave')) {
+            return false;
+        }
+
         if (!$this->registerHook('actionAdminControllerSetMedia')) {
             return false;
         }
 
         return true;
     }
+    
+    public function hookActionCartSave($params){
+        
+        $discount_enabled = (null !== $this->discount_enabled && $this->discount_enabled)? true : false;        
+        
+        if($discount_enabled){
+            
+            $cart = $params['cart'];
+            $total = $cart->getOrderTotal(false, Cart::ONLY_PRODUCTS);
+            $existingRules = $cart->getCartRules();
+            $ps_currency  = new Currency((int)($cart->id_currency));
+            $currency = $ps_currency->iso_code;
+            
+            // Avoid applying the same discount twice
+            foreach ($existingRules as $rule) {
+                if ($rule['code'] == 'BitcoinDiscount') {
+                    $cart->removeCartRule($rule['id_cart_rule']);
+                }
+            }
+            
+            $discount_type = $this -> discount_type;
+            $isDiscount = false;
+            
+            if($discount_type === 'fixed' && floatval($this -> discount_amount) > 0){
+                
+                $cart->addCartRule($cartRule->id);
+                
+                $discount_amount = round(floatval($this -> discount_amount),2);
+                $discount_amount_limit = floatval($this -> discount_amount_limit);
+                
+                if($discount_amount_limit >= 0 && $discount_amount_limit < 100){
+                    if($discount_amount > ($total * $discount_amount_limit / 100)){
+                        $discount_amount = round($total * $discount_amount_limit / 100,2);
+                    }
+                        
+                    if($discount_amount < $total){
+                        $isDiscount = true;
+                        $discount_title = '';
+                    }
+                }
+            }
+            elseif($this -> discount_percentage > 0) {
+                    $discount_percentage = $this -> discount_percentage;
+
+                    if($discount_percentage > 0 && $discount_percentage < 100){
+                        $isDiscount = true;
+                        $discount_title = ' '.$discount_percentage . '%';
+                    }
+            }
+            if($isDiscount){
+                
+                
+                
+                $cartRule = new CartRule();
+                $cartRule->name = array_fill_keys(Language::getIDs(false), 'Bitcoin discount' . $discount_title);
+                $cartRule->code = 'BitcoinDiscount';
+                
+                if($discount_type === 'fixed'){
+                    $cartRule->reduction_amount = $discount_amount;
+                    //$cartRule->reduction_currency = $ps_currency;
+                }
+                else {
+                    $cartRule->reduction_percent = $discount_percentage;
+                }
+                
+                $cartRule->date_from = date('Y-m-d H:i:s', strtotime('-1 day'));
+                $cartRule->date_to = date('Y-m-d H:i:s', strtotime('+1 year'));
+                $cartRule->active = true;
+                $cartRule->add();
+
+                $cart->addCartRule($cartRule->id);                    
+            }            
+        }
+    }    
 
     public function hookActionAdminControllerSetMedia(array $params)
     {
@@ -290,6 +379,14 @@ class Coinsnap extends PaymentModule
                 Configuration::updateValue('BTCPAY_STORE_ID', pSQL(Tools::getValue('btcpay_store_id')));
                 Configuration::updateValue('COINSNAP_AUTOREDIRECT', pSQL(Tools::getValue('coinsnap_autoredirect')));
                 Configuration::updateValue('COINSNAP_RETURNURL', pSQL(Tools::getValue('coinsnap_returnurl')));
+                
+                Configuration::updateValue('COINSNAP_DISCOUNT_ENABLED', pSQL(Tools::getValue('coinsnap_discount_enabled')));
+                Configuration::updateValue('COINSNAP_DISCOUNT_TYPE', pSQL(Tools::getValue('coinsnap_discount_type')));
+                Configuration::updateValue('COINSNAP_DISCOUNT_AMOUNT', pSQL(Tools::getValue('coinsnap_discount_amount')));
+                Configuration::updateValue('COINSNAP_DISCOUNT_LIMIT', pSQL(Tools::getValue('coinsnap_discount_amount_limit')));
+                Configuration::updateValue('COINSNAP_DISCOUNT_PERCENTAGE', pSQL(Tools::getValue('coinsnap_discount_percentage')));
+                
+                
                 Configuration::updateValue('COINSNAP_STATUS_EXP', pSQL(Tools::getValue('coinsnap_status_expired')));
                 Configuration::updateValue('COINSNAP_STATUS_SET', pSQL(Tools::getValue('coinsnap_status_settled')));
                 Configuration::updateValue('COINSNAP_STATUS_PRO', pSQL(Tools::getValue('coinsnap_status_processing')));
@@ -355,6 +452,13 @@ class Coinsnap extends PaymentModule
             'btcpay_api_key' => Configuration::get('BTCPAY_API_KEY'),
             'coinsnap_autoredirect' => Configuration::get('COINSNAP_AUTOREDIRECT'),
             'coinsnap_returnurl' => Configuration::get('COINSNAP_RETURNURL'),
+            
+            'coinsnap_discount_enabled' => Configuration::get('COINSNAP_DISCOUNT_ENABLED'),
+            'coinsnap_discount_type' => Configuration::get('COINSNAP_DISCOUNT_TYPE'),
+            'coinsnap_discount_amount' => Configuration::get('COINSNAP_DISCOUNT_AMOUNT'),
+            'coinsnap_discount_amount_limit' => Configuration::get('COINSNAP_DISCOUNT_LIMIT'),
+            'coinsnap_discount_percentage' => Configuration::get('COINSNAP_DISCOUNT_PERCENTAGE'),
+            
             'coinsnap_status_new' => $coinsnap_status_new,
             'coinsnap_status_expired' => $coinsnap_status_expired,
             'coinsnap_status_settled' => $coinsnap_status_settled,
@@ -537,18 +641,33 @@ class Coinsnap extends PaymentModule
                 $metadata['orderId'] = $order_id;
             }
 
-            $redirectAutomatically = (Configuration::get('COINSNAP_AUTOREDIRECT') > 0) ? true : false;
+            $redirectAutomatically = ($this->coinsnap_autoredirect > 0) ? true : false;
             $walletMessage = '';
             
             // Handle currencies non-supported by BTCPay Server, we need to change them BTC and adjust the amount.
-            if (($currency === 'SATS' || $currency === 'RUB') && $this->provider === 'btcpay') {
-                $currency = 'BTC';
-                $rate = 1/$checkInvoice['rate'];
-                $amountBTC = bcdiv(strval($amount), strval($rate), 8);
-                $amount = (float)$amountBTC;
+            if ($currency !== 'BTC' && $this->provider === 'btcpay') {
+                $store = new \Coinsnap\Client\Store($this->api_url, $this->api_key);
+                $btcpayCurrencies = $store -> getStoreCurrenciesRates($this->store_id,array($currency));
+                $isCurrency = true;
+                if(!isset($btcpayCurrencies['result']['error']) && count($btcpayCurrencies['result']['currencies'])>0){
+                    if(!isset($btcpayCurrencies['result']['currencies']['BTC_'.$currency])){
+                        $isCurrency = false;
+                    }
+                }
+                else {
+                    $isCurrency = false;
+                }
+                    
+                // Handle currencies non-supported by BTCPay Server, we need to change them BTC and adjust the amount.
+                if( !$isCurrency ){
+                    $currency = 'BTC';
+                    $rate = 1/$checkInvoice['rate'];
+                    $amountBTC = bcdiv(strval($amount), strval($rate), 8);
+                    $amount = (float)$amountBTC;
+                }
             }
         
-            $camount = ($currency_code === 'BTC')? \Coinsnap\Util\PreciseNumber::parseFloat($amount,8) : \Coinsnap\Util\PreciseNumber::parseFloat($amount,2);
+            $camount = ($currency === 'BTC')? \Coinsnap\Util\PreciseNumber::parseFloat($amount,8) : \Coinsnap\Util\PreciseNumber::parseFloat($amount,2);
 
             $invoice = $client->createInvoice(
                 $this->store_id,
@@ -598,26 +717,20 @@ class Coinsnap extends PaymentModule
     public function webhookExists(string $apiUrl, string $apiKey, string $storeId): bool
     {
         $whClient = new \Coinsnap\Client\Webhook($apiUrl, $apiKey);
-        $webhook = Configuration::get('COINSNAP_WEBHOOK');
-                
-        if ($storedWebhook = json_decode($webhook, true)) {
-
-            try {
-                $existingWebhook = $whClient->getWebhook($storeId, $storedWebhook['id']);
-
-                if ($existingWebhook->getData()['id'] === $storedWebhook['id'] && strpos($existingWebhook->getData()['url'], $storedWebhook['url']) !== false) {
-                    return true;
-                }
-            } catch (\Throwable $e) {
-                $errorMessage = 'Error fetching existing Webhook. Message: ' .$e->getMessage();
-                return false;
-            }
-        }
+        $storedWebhook = json_decode(Configuration::get('COINSNAP_WEBHOOK'),true);
+        $isWebhook = false;
+        
         try {
             $storeWebhooks = $whClient->getWebhooks($storeId);
             foreach ($storeWebhooks as $webhook) {
-                if (strpos($webhook->getData()['url'], $this->webhook_url) !== false) {
-                    $whClient->deleteWebhook($storeId, $webhook->getData()['id']);
+                if (strpos($webhook->getData()['url'], $this -> webhook_url) !== false) {
+                    
+                    if ($storedWebhook && is_array($storedWebhook) && $webhook->getData()['id'] === $storedWebhook['id']){
+                        $isWebhook = true;
+                    }
+                    else {
+                        $whClient->deleteWebhook($storeId, $webhook->getData()['id']);
+                    }
                 }
             }
         } catch (\Throwable $e) {
@@ -625,7 +738,7 @@ class Coinsnap extends PaymentModule
             return false;
         }
 
-        return false;
+        return $isWebhook;
     }
 
     public function registerWebhook(string $apiUrl, string $apiKey, string $storeId, string $provider = 'coinsnap')
