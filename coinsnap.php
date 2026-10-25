@@ -84,9 +84,9 @@ class Coinsnap extends PaymentModule
         
         $this -> discount_enabled = Configuration::get('COINSNAP_DISCOUNT_ENABLED');
         $this -> discount_type = Configuration::get('COINSNAP_DISCOUNT_TYPE');
-        $this -> discount_amount = floatval(Configuration::get('COINSNAP_DISCOUNT_AMOUNT'));
-        $this -> discount_amount_limit = floatval(Configuration::get('COINSNAP_DISCOUNT_LIMIT'));
-        $this -> discount_percentage = floatval(Configuration::get('COINSNAP_DISCOUNT_PERCENTAGE'));
+        $this -> discount_amount = (float)Configuration::get('COINSNAP_DISCOUNT_AMOUNT');
+        $this -> discount_amount_limit = (float)Configuration::get('COINSNAP_DISCOUNT_LIMIT');
+        $this -> discount_percentage = (float)Configuration::get('COINSNAP_DISCOUNT_PERCENTAGE');
 
         $this -> status_new = Configuration::get('COINSNAP_STATUS_NEW');
         $this -> status_expired = Configuration::get('COINSNAP_STATUS_EXP');
@@ -142,12 +142,12 @@ class Coinsnap extends PaymentModule
             $discount_type = $this -> discount_type;
             $isDiscount = false;
             
-            if($discount_type === 'fixed' && floatval($this -> discount_amount) > 0){
+            if($discount_type === 'fixed' && (float)$this -> discount_amount > 0){
                 
                 $cart->addCartRule($cartRule->id);
                 
-                $discount_amount = round(floatval($this -> discount_amount),2);
-                $discount_amount_limit = floatval($this -> discount_amount_limit);
+                $discount_amount = round((float)$this -> discount_amount,2);
+                $discount_amount_limit = (float)$this -> discount_amount_limit;
                 
                 if($discount_amount_limit >= 0 && $discount_amount_limit < 100){
                     if($discount_amount > ($total * $discount_amount_limit / 100)){
@@ -665,7 +665,7 @@ class Coinsnap extends PaymentModule
                 if( !$isCurrency ){
                     $currency = 'BTC';
                     $rate = 1/$checkInvoice['rate'];
-                    $amountBTC = bcdiv(strval($amount), strval($rate), 8);
+                    $amountBTC = bcdiv((string)$amount, (string)$rate, 8);
                     $amount = (float)$amountBTC;
                 }
             }
