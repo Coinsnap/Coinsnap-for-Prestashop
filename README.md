@@ -148,6 +148,16 @@ Use the support area in your Coinsnap merchant account or join the official [Coi
 
 ## Changelog
 
+#### 1.4.0
+* Security: The module no longer writes `modules/coinsnap/logs/coinsnap.log`. That file was downloadable from the shop's website and held every webhook, including customer names and order references. The update deletes it.
+* Security: Webhooks are verified with the timestamped `X-Coinsnap-Signature` header (Coinsnap) or `BTCPay-Sig` (BTCPay Server), with a timing-safe comparison. A missing webhook secret rejects every webhook.
+* Security: An order is marked paid only when the invoice is settled, was created by this module for that order, and matches the amount and currency the module asked for. Before, any invoice in the same Coinsnap store with a matching order ID could change an order's status, including cancelling a paid order.
+* Security: Each invoice marks an order paid once. Paid, shipped, refunded or cancelled orders are no longer changed by a webhook. BTCPay invoices marked settled by hand are not accepted.
+* Security: API keys are no longer shown on the settings page or in error messages. Leave the field empty to keep the stored key.
+* Fix: Checkout failed for carts of 1000 or more in the shop currency.
+* Fix: A failed invoice creation shows an error instead of crashing, and a payment server outage no longer replaces the webhook.
+* Fix: Saving a cart with a fixed Bitcoin discount crashed.
+
 #### 1.3.2 :: 2026-10-18
 * Fixed "PaymentModule::validateOrder - Order Status cannot be loaded" error on checkout.
 * Fixed bug with automatic redirect after payment.
