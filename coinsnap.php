@@ -112,10 +112,6 @@ class Coinsnap extends PaymentModule
             return false;
         }
 
-        if (!$this->registerHook('actionCartSave')) {
-            return false;
-        }
-
         if (!$this->registerHook('actionAdminControllerSetMedia')) {
             return false;
         }
@@ -123,77 +119,59 @@ class Coinsnap extends PaymentModule
         return CoinsnapInvoiceStore::createTable();
     }
     
-    public function hookActionCartSave($params){
-        
-        $bitcoin_discount_enabled = (null !== $this->discount_enabled && (int)$this->discount_enabled > 0)? true : false;        
-        
-        if($bitcoin_discount_enabled){
-            
-            $cart = $params['cart'];
-            $total = $cart->getOrderTotal(false, Cart::ONLY_PRODUCTS);
-            $existingRules = $cart->getCartRules();
-            $ps_currency  = new Currency((int)($cart->id_currency));
-            $currency = $ps_currency->iso_code;
-            
-            // Avoid applying the same discount twice
-            foreach ($existingRules as $rule) {
-                if ($rule['code'] == 'BitcoinDiscount') {
-                    $cart->removeCartRule($rule['id_cart_rule']);
-                }
-            }
-            
-            $discount_type = $this -> discount_type;
-            $isDiscount = false;
-            
-            if($discount_type === 'fixed' && (float)$this -> discount_amount > 0){
-
-                $discount_amount = round((float)$this -> discount_amount,2);
-                $discount_amount_limit = (float)$this -> discount_amount_limit;
-                
-                if($discount_amount_limit >= 0 && $discount_amount_limit < 100){
-                    if($discount_amount > ($total * $discount_amount_limit / 100)){
-                        $discount_amount = round($total * $discount_amount_limit / 100,2);
-                    }
-                        
-                    if($discount_amount < $total){
-                        $isDiscount = true;
-                        $discount_title = '';
-                    }
-                }
-            }
-            elseif($this -> discount_percentage > 0) {
-                    $discount_percentage = $this -> discount_percentage;
-
-                    if($discount_percentage > 0 && $discount_percentage < 100){
-                        $isDiscount = true;
-                        $discount_title = ' '.$discount_percentage . '%';
-                    }
-            }
-            if($isDiscount){
-                
-                
-                
-                $cartRule = new CartRule();
-                $cartRule->name = array_fill_keys(Language::getIDs(false), 'Bitcoin discount' . $discount_title);
-                $cartRule->code = 'BitcoinDiscount';
-                
-                if($discount_type === 'fixed'){
-                    $cartRule->reduction_amount = $discount_amount;
-                    //$cartRule->reduction_currency = $ps_currency;
-                }
-                else {
-                    $cartRule->reduction_percent = $discount_percentage;
-                }
-                
-                $cartRule->date_from = date('Y-m-d H:i:s', strtotime('-1 day'));
-                $cartRule->date_to = date('Y-m-d H:i:s', strtotime('+1 year'));
-                $cartRule->active = true;
-                $cartRule->add();
-
-                $cart->addCartRule($cartRule->id);                    
-            }            
+    // The Bitcoin discount, as a one-time cart rule for this customer, applied only when paying with Coinsnap.
+    private function applyBitcoinDiscount(Cart $cart): void
+    {
+        if (!$this->discount_enabled) {
+            return;
         }
-    }    
+        $total = (float) $cart->getOrderTotal(false, Cart::ONLY_PRODUCTS);
+        $reductionAmount = 0.0;
+        $reductionPercent = 0.0;
+        $title = '';
+
+        if ($this->discount_type === 'fixed' && $this->discount_amount > 0) {
+            $reductionAmount = round($this->discount_amount, 2);
+            $limit = $this->discount_amount_limit;
+            if ($limit < 0 || $limit >= 100) {
+                return;
+            }
+            $reductionAmount = min($reductionAmount, round($total * $limit / 100, 2));
+            if ($reductionAmount <= 0 || $reductionAmount >= $total) {
+                return;
+            }
+        }
+        elseif ($this->discount_type !== 'fixed' && $this->discount_percentage > 0 && $this->discount_percentage < 100) {
+            $reductionPercent = $this->discount_percentage;
+            $title = ' ' . $reductionPercent . '%';
+        }
+        else {
+            return;
+        }
+
+        $cartRule = new CartRule();
+        $cartRule->name = array_fill_keys(Language::getIDs(false), 'Bitcoin discount' . $title);
+        // Unguessable, single use, this customer only, short-lived: it cannot be entered as a voucher elsewhere.
+        $cartRule->code = 'CSBTC-' . Tools::strtoupper(Tools::passwdGen(16));
+        $cartRule->id_customer = (int) $cart->id_customer;
+        $cartRule->quantity = 1;
+        $cartRule->quantity_per_user = 1;
+        $cartRule->highlight = false;
+        $cartRule->partial_use = false;
+        $cartRule->date_from = date('Y-m-d H:i:s', strtotime('-1 minute'));
+        $cartRule->date_to = date('Y-m-d H:i:s', strtotime('+1 hour'));
+        $cartRule->active = true;
+        if ($reductionAmount > 0) {
+            $cartRule->reduction_amount = $reductionAmount;
+            $cartRule->reduction_currency = (int) $cart->id_currency;
+        }
+        else {
+            $cartRule->reduction_percent = $reductionPercent;
+        }
+        if ($cartRule->add()) {
+            $cart->addCartRule((int) $cartRule->id);
+        }
+    }
 
     public function hookActionAdminControllerSetMedia(array $params)
     {
@@ -678,6 +656,8 @@ class Coinsnap extends PaymentModule
         $cart = $this->context->cart;
         $customer = new Customer($cart->id_customer);
         $iaddress = new Address($cart->id_address_invoice);
+
+        $this->applyBitcoinDiscount($cart);
 
         // No thousands separator: "1,234.56" became 1.00 and crashed checkout for carts of 1000 or more.
         $amount = number_format($cart->getOrderTotal(true, Cart::BOTH), 2, '.', '');

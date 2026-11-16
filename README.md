@@ -149,6 +149,7 @@ Use the support area in your Coinsnap merchant account or join the official [Coi
 ## Changelog
 
 #### 1.4.0
+* Security: The Bitcoin discount is applied only when the customer pays with Coinsnap, as a single-use voucher bound to that customer. Before, every cart save created a public "BitcoinDiscount" voucher valid for a year that anyone could enter, whatever the payment method; the upgrade removes those vouchers.
 * Security: The module no longer writes `modules/coinsnap/logs/coinsnap.log`. That file was downloadable from the shop's website and held every webhook, including customer names and order references. The update deletes it.
 * Security: Webhooks are verified with the timestamped `X-Coinsnap-Signature` header (Coinsnap) or `BTCPay-Sig` (BTCPay Server), with a timing-safe comparison. A missing webhook secret rejects every webhook.
 * Security: An order is marked paid only when the invoice is settled, was created by this module for that order, and matches the amount and currency the module asked for. Before, any invoice in the same Coinsnap store with a matching order ID could change an order's status, including cancelling a paid order.
