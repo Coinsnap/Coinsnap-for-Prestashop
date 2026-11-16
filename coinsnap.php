@@ -395,7 +395,9 @@ class Coinsnap extends PaymentModule
             $store_id = ($_provider === 'btcpay') ? Tools::getValue('btcpay_store_id') : Tools::getValue('coinsnap_store_id');
             // The key fields are shown empty; leaving one empty keeps the stored key.
             $coinsnap_api_key = (string) Tools::getValue('coinsnap_api_key') !== '' ? (string) Tools::getValue('coinsnap_api_key') : (string) Configuration::get('COINSNAP_API_KEY');
-            $btcpay_api_key = (string) Tools::getValue('btcpay_api_key') !== '' ? (string) Tools::getValue('btcpay_api_key') : (string) Configuration::get('BTCPAY_API_KEY');
+            // The stored BTCPay key is never sent to a server URL it wasn't saved for.
+            $btcpayUrlUnchanged = (string) Tools::getValue('btcpay_server_url') === (string) Configuration::get('BTCPAY_SERVER_URL');
+            $btcpay_api_key = (string) Tools::getValue('btcpay_api_key') !== '' ? (string) Tools::getValue('btcpay_api_key') : ($btcpayUrlUnchanged ? (string) Configuration::get('BTCPAY_API_KEY') : '');
             $api_key = ($_provider === 'btcpay') ? $btcpay_api_key : $coinsnap_api_key;
 
             if (empty($api_url)) {
