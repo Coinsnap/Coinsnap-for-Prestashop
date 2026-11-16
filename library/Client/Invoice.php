@@ -20,7 +20,6 @@ namespace Coinsnap\Client;
 if (!defined('_PS_VERSION_')) {
     exit;
 }
-header('Access-Control-Allow-Origin: *');
 
 use Coinsnap\Result\InvoicePaymentMethod;
 use Coinsnap\Http\CurlClient;
