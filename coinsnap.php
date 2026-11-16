@@ -122,6 +122,7 @@ class Coinsnap extends PaymentModule
     // The Bitcoin discount, as a one-time cart rule for this customer, applied only when paying with Coinsnap.
     private function applyBitcoinDiscount(Cart $cart): void
     {
+        $this->removeBitcoinDiscount($cart);
         if (!$this->discount_enabled) {
             return;
         }
@@ -170,6 +171,18 @@ class Coinsnap extends PaymentModule
         }
         if ($cartRule->add()) {
             $cart->addCartRule((int) $cartRule->id);
+        }
+    }
+
+    // Drops discounts from earlier attempts, so a cart never keeps one it did not pay for with Coinsnap.
+    private function removeBitcoinDiscount(Cart $cart): void
+    {
+        foreach ($cart->getCartRules() as $rule) {
+            if (strpos((string) ($rule['code'] ?? ''), 'CSBTC-') !== 0) {
+                continue;
+            }
+            $cart->removeCartRule((int) $rule['id_cart_rule']);
+            (new CartRule((int) $rule['id_cart_rule']))->delete();
         }
     }
 
@@ -767,6 +780,7 @@ class Coinsnap extends PaymentModule
             } else {
                 $errorMessage = $checkInvoice['error'];
             }
+            $this->removeBitcoinDiscount($cart);
             $errmsg = $this->l($errorMessage);
             $checkout_type = Configuration::get('PS_ORDER_PROCESS_TYPE') ? 'order-opc' : 'order';
             $url = (_PS_VERSION_ >= '1.5' ? 'index.php?controller='.$checkout_type.'&' : $checkout_type.'.php?').'step=3&cgv=1&coinsnaperror='.$errmsg.'#coinsnap-anchor';
