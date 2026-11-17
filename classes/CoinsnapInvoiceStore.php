@@ -70,6 +70,14 @@ class CoinsnapInvoiceStore
         );
     }
 
+    // Paid is known from these records, not from order status IDs, which merchants reuse.
+    public static function orderPaid(int $idOrder): bool
+    {
+        return (bool) Db::getInstance()->getValue(
+            'SELECT 1 FROM `' . _DB_PREFIX_ . self::TABLE . '` WHERE `id_order` = ' . (int) $idOrder . ' AND `paid_at` IS NOT NULL'
+        );
+    }
+
     // True for the first caller only, so two webhooks for one invoice can't both mark the order paid.
     public static function claimPaid(string $invoiceId, int $idOrder, string $amount, string $currency): bool
     {

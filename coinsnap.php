@@ -23,6 +23,7 @@ require_once(dirname(__FILE__) . '/library/loader.php');
 require_once(dirname(__FILE__) . '/classes/CoinsnapWebhookSignature.php');
 require_once(dirname(__FILE__) . '/classes/CoinsnapInvoiceDecision.php');
 require_once(dirname(__FILE__) . '/classes/CoinsnapInvoiceStore.php');
+require_once(dirname(__FILE__) . '/classes/CoinsnapBtcpayKey.php');
 if (!defined('COINSNAP_SERVER_PATH')) {
     define('COINSNAP_SERVER_PATH', 'stores');
 }
@@ -116,6 +117,9 @@ class Coinsnap extends PaymentModule
             return false;
         }
 
+        // A fresh install has no orders from before the invoice records existed.
+        Configuration::updateGlobalValue('COINSNAP_LEGACY_UNTIL', 0);
+
         return CoinsnapInvoiceStore::createTable();
     }
     
@@ -193,6 +197,11 @@ class Coinsnap extends PaymentModule
 
     public function hookPaymentOptions($params)
     {
+        // The Bitcoin discount is added only while a Coinsnap payment starts. One still on the cart
+        // here is left over from an attempt that failed, and would apply to any payment method.
+        if (isset($params['cart']) && $params['cart'] instanceof Cart && $params['cart']->id) {
+            $this->removeBitcoinDiscount($params['cart']);
+        }
         return $this->coinsnapPaymentOptions($params);
     }
 
@@ -292,7 +301,13 @@ class Coinsnap extends PaymentModule
         if (CoinsnapInvoiceStore::orderHasInvoices((int) $order->id)) {
             return null;
         }
-        // Orders placed before 1.4.0 have no record; check against what was sent then.
+        // Orders placed before 1.4.0 have no record. They are accepted only for a day after the
+        // upgrade, when every invoice opened before it has expired; after that, any invoice with
+        // the same order ID and amount could pay them.
+        $legacyUntil = (int) Configuration::getGlobalValue('COINSNAP_LEGACY_UNTIL');
+        if (time() > $legacyUntil || strtotime((string) $order->date_add) > $legacyUntil - 86400) {
+            return null;
+        }
         $currency = new Currency((int) $order->id_currency);
         return ['amount' => number_format((float) $order->total_paid, 2, '.', ''), 'currency' => (string) $currency->iso_code];
     }
@@ -304,8 +319,16 @@ class Coinsnap extends PaymentModule
         $new = (int) $this->status_new;
         $processing = (int) $this->status_processing;
         $expired = (int) $this->status_expired;
+        // From the module's own records: processing and paid may be the same status ID.
+        $alreadyPaid = CoinsnapInvoiceStore::orderPaid((int) $order->id);
 
         if ($decision === CoinsnapInvoiceDecision::PAID) {
+            if ($alreadyPaid) {
+                // A second invoice paid for an order another invoice already paid: record it, change nothing.
+                $first = CoinsnapInvoiceStore::claimPaid($invoiceId, (int) $order->id, $expected['amount'], $expected['currency']);
+                $this->logWebhookInfo($first ? 'order already paid by another invoice' : 'already processed', $invoiceId);
+                return;
+            }
             // A late payment can still settle an order that expired.
             if (!in_array($state, [$new, $processing, $expired], true)) {
                 $this->logWebhookInfo('no change from state ' . $state, $invoiceId);
@@ -319,7 +342,16 @@ class Coinsnap extends PaymentModule
             $this->logWebhookInfo('paid', $invoiceId);
             return;
         }
-        if ($decision === CoinsnapInvoiceDecision::PROCESSING && $state === $new) {
+        if ($alreadyPaid) {
+            $this->logWebhookInfo('no change: order paid', $invoiceId);
+            return;
+        }
+        if ($decision === CoinsnapInvoiceDecision::PROCESSING && $state === $new && $processing !== $new) {
+            // Processing is seen but not confirmed; it must not use a status that counts as paid or shipped.
+            if (!self::isAwaitingState($processing)) {
+                $this->logWebhookInfo('no change: processing status is a paid status', $invoiceId);
+                return;
+            }
             $this->setOrderStatus($order->id, $this->status_processing, $invoiceId);
             $this->logWebhookInfo('status processing', $invoiceId);
             return;
@@ -330,6 +362,33 @@ class Coinsnap extends PaymentModule
             return;
         }
         $this->logWebhookInfo('no change', $invoiceId);
+    }
+
+    // An order status that neither counts as paid nor ships goods.
+    public static function isAwaitingState(int $idOrderState): bool
+    {
+        $state = new OrderState($idOrderState);
+        return Validate::isLoadedObject($state) && !$state->paid && !$state->shipped && !$state->delivery;
+    }
+
+    // Module configuration is changed only by an employee allowed to configure this module, with a valid token.
+    private function employeeMayConfigure(): bool
+    {
+        $employee = $this->context->employee ?? null;
+        if (!$employee || !Validate::isLoadedObject($employee)) {
+            return false;
+        }
+        // The form's own token, so the check holds even where the shop turned off tokens in admin URLs.
+        $token = isset($_POST['coinsnap_form_token']) ? (string) $_POST['coinsnap_form_token'] : '';
+        if ($token === '' || !hash_equals($this->configFormToken(), $token)) {
+            return false;
+        }
+        return (bool) Module::getPermissionStatic($this->id, 'configure', $employee);
+    }
+
+    private function configFormToken(): string
+    {
+        return Tools::getAdminToken('CoinsnapConfig' . (int) $this->context->employee->id);
     }
 
     private function logWebhookInfo(string $reason, string $invoiceId = '')
@@ -375,7 +434,9 @@ class Coinsnap extends PaymentModule
     public function getContent()
     {
 
-        if (Tools::isSubmit('submit' . $this->name)) {
+        if (Tools::isSubmit('submit' . $this->name) && !$this->employeeMayConfigure()) {
+            $warning = $this->l('You do not have permission to change these settings.');
+        } elseif (Tools::isSubmit('submit' . $this->name)) {
 
             $coinsnap_name = Tools::getValue('coinsnap_name');
             $saveOpt = false;
@@ -411,6 +472,28 @@ class Coinsnap extends PaymentModule
             }
             if (empty(Tools::getValue('coinsnap_status_processing'))) {
                 $errorMessage = 'Order Status Processing must have value';
+            }
+
+            // Orders are placed in the New status before payment, so New, Processing (not confirmed)
+            // and Expired must be statuses that neither count as paid nor ship the goods.
+            if (empty($errorMessage)) {
+                foreach (['coinsnap_status_new' => 'New', 'coinsnap_status_processing' => 'Processing', 'coinsnap_status_expired' => 'Expired'] as $field => $label) {
+                    if (!self::isAwaitingState((int) Tools::getValue($field))) {
+                        $errorMessage = 'Order Status ' . $label . ' must not be a paid or shipped status';
+                    }
+                }
+            }
+
+            if (empty($errorMessage) && $_provider === 'btcpay') {
+                // A pasted BTCPay key must be limited to this store; BTCPay, not the form, says what it can do.
+                try {
+                    $permissions = CoinsnapBtcpayKey::fetchPermissions((string) $api_url, (string) $api_key);
+                    if ($permissions === null || !CoinsnapBtcpayKey::isAcceptable($permissions, (string) $store_id)) {
+                        $errorMessage = 'The BTCPay API key must be limited to this store and may only have store permissions. Create a key for this store only.';
+                    }
+                } catch (\Throwable $e) {
+                    $errorMessage = 'btcpay: the server could not be reached. Please check the server URL and try again.';
+                }
             }
 
             if (empty($errorMessage)) {
@@ -476,7 +559,11 @@ class Coinsnap extends PaymentModule
                     }
 
                 } else {
-                    $checkInvoice = $client->checkPaymentData(0, $currency, 'coinsnap', 'calculation');
+                    try {
+                        $checkInvoice = $client->checkPaymentData(0, $currency, 'coinsnap', 'calculation');
+                    } catch (\Throwable $e) {
+                        $checkInvoice = ['result' => false];
+                    }
                 }
 
                 if (isset($checkInvoice) && $checkInvoice['result']) {
@@ -501,10 +588,10 @@ class Coinsnap extends PaymentModule
         $coinsnap_status_new  = empty(Configuration::get('COINSNAP_STATUS_NEW')) ? 1 : Configuration::get('COINSNAP_STATUS_NEW');
         $coinsnap_status_expired  = empty(Configuration::get('COINSNAP_STATUS_EXP')) ? 8 : Configuration::get('COINSNAP_STATUS_EXP');
         $coinsnap_status_settled  = empty(Configuration::get('COINSNAP_STATUS_SET')) ? 2 : Configuration::get('COINSNAP_STATUS_SET');
-        $coinsnap_status_processing = empty(Configuration::get('COINSNAP_STATUS_PRO')) ? 3 : Configuration::get('COINSNAP_STATUS_PRO');
+        // Not 3 ("Processing in progress"): that status counts as paid, and Processing is not confirmed yet.
+        $coinsnap_status_processing = empty(Configuration::get('COINSNAP_STATUS_PRO')) ? 1 : Configuration::get('COINSNAP_STATUS_PRO');
 
         $data = array(
-            'base_url'    => _PS_BASE_URL_ . __PS_BASE_URI__,
             'module_name' => $this->name,
             'coinsnap_provider' => Configuration::get('COINSNAP_PROVIDER'),
             'coinsnap_store_id' => Configuration::get('COINSNAP_STORE_ID'),
@@ -528,11 +615,16 @@ class Coinsnap extends PaymentModule
             'coinsnap_status_processing' => $coinsnap_status_processing,
             //'coinsnap_confirmation' => $html,
             //'coinsnap_warning' => $warning,
-            'orderstates' => $OrderStates
+            'orderstates' => $OrderStates,
+            'coinsnap_form_token' => $this->configFormToken(),
         );
 
         if (isset($html)) {
             $data['coinsnap_confirmation'] = $html;
+        }
+        if (!isset($warning) && !self::isAwaitingState((int) $coinsnap_status_processing)) {
+            // Older versions defaulted to 3 ("Processing in progress"), which counts as paid.
+            $warning = $this->l('The Processing order status counts as paid or shipped, but a processing payment is not confirmed yet. Choose an awaiting-payment status and save. Until then, processing payments leave the order unchanged.');
         }
         if (isset($warning)) {
             $data['coinsnap_warning'] = $warning;
@@ -680,11 +772,14 @@ class Coinsnap extends PaymentModule
 
         $client = new \Coinsnap\Client\Invoice($this->api_url, $this->api_key);
         $checkInvoice = $this->checkAmount($amount, strtoupper($currency));
+        // The order is placed before payment, so its first status must not count as paid or ship goods.
+        if ($checkInvoice['result'] === true && !self::isAwaitingState((int) $this->status_new)) {
+            PrestaShopLogger::addLog('Coinsnap: checkout refused, the New order status counts as paid or shipped', 3);
+            $checkInvoice = ['result' => false, 'error' => 'Payment method is not available'];
+        }
 
         if ($checkInvoice['result'] === true) {
             
-            $redirectUrl = (!empty(Configuration::get('COINSNAP_RETURNURL')))? Configuration::get('COINSNAP_RETURNURL') : (
-                (Configuration::get('PS_REWRITING_SETTINGS') > 0) ? _PS_BASE_URL_.__PS_BASE_URI__.$lang.'/order-confirmation?id_cart='.(int)$cart_id.'&id_module='.(int)$this->id.'&id_order='.(int)$cart_id.'&key='.$cart->secure_key : _PS_BASE_URL_.__PS_BASE_URI__.'index.php?controller=order-confirmation&id_cart='.(int)$cart_id.'&id_module='.(int)$this->id.'&id_order='.(int)$cart_id.'&key='.$cart->secure_key);
 
             $buyerName =  $iaddress->firstname.' '.$iaddress->lastname;
             $buyerEmail = $customer->email;
@@ -692,13 +787,25 @@ class Coinsnap extends PaymentModule
             //  Order saving
             $extra_vars['transaction_id'] = '';
             
-            PrestaShopLogger::addLog( 'Coinsnap: state ID = ' . (int)$this->status_new, 1);
-            
-            $this->validateOrder((int)$cart_id, (int)$this->status_new, (float)$amount, $this->displayName, null, $extra_vars, null, false, $cart->secure_key);
+            try {
+                $this->validateOrder((int)$cart_id, (int)$this->status_new, (float)$amount, $this->displayName, null, $extra_vars, null, false, $cart->secure_key);
+            } catch (\Throwable $e) {
+                // No order, so no Coinsnap payment: the discount must not stay on the cart.
+                $this->removeBitcoinDiscount($cart);
+                throw $e;
+            }
 
             $order_id = Order::getIdByCartId($cart_id).'';
             $order = new Order((int)$order_id);
             $order_number = $order->reference;
+
+            // Built from the shop's configured domain, not from the request's Host header.
+            $redirectUrl = (!empty(Configuration::get('COINSNAP_RETURNURL'))) ? Configuration::get('COINSNAP_RETURNURL') : $this->context->link->getPageLink(
+                'order-confirmation',
+                true,
+                null,
+                ['id_cart' => (int) $cart_id, 'id_module' => (int) $this->id, 'id_order' => (int) $order_id, 'key' => $cart->secure_key]
+            );
 
 
             $metadata = [];

@@ -155,6 +155,14 @@ Use the support area in your Coinsnap merchant account or join the official [Coi
 * Security: An order is marked paid only when the invoice is settled, was created by this module for that order, and matches the amount and currency the module asked for. Before, any invoice in the same Coinsnap store with a matching order ID could change an order's status, including cancelling a paid order.
 * Security: Each invoice marks an order paid once. Paid, shipped, refunded or cancelled orders are no longer changed by a webhook. BTCPay invoices marked settled by hand are not accepted.
 * Security: API keys are no longer shown on the settings page or in error messages. Leave the field empty to keep the stored key.
+* Security: The order statuses New, Processing and Expired can no longer be set to a status that counts as paid or shipped. The old default for Processing ("Processing in progress") counts as paid, so an unconfirmed payment looked paid; until the merchant picks another status, processing payments leave the order unchanged. Checkout is refused if New is a paid status.
+* Security: Whether an order is already paid is read from the module's invoice records, so a second invoice expiring never moves a paid order back, even when Processing and Settled use the same status.
+* Security: Orders placed before 1.4.0 (no invoice record) are accepted for one day after the upgrade only.
+* Security: A pasted BTCPay API key is accepted only if BTCPay reports that every permission is a store permission for the configured store.
+* Security: Saving the settings requires the employee's permission to configure the module and a form token, checked before any API call.
+* Security: A Bitcoin discount left on a cart by a failed attempt is removed when the payment options are shown and when the order can't be created.
+* Fix: The return URL is built from the shop's configured domain, not from the request.
+* Fix: A failed BTCPay rates request no longer crashes checkout (WordPress-only functions in the bundled library).
 * Fix: Checkout failed for carts of 1000 or more in the shop currency.
 * Fix: A failed invoice creation shows an error instead of crashing, and a payment server outage no longer replaces the webhook.
 * Fix: Saving a cart with a fixed Bitcoin discount crashed.
