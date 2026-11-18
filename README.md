@@ -28,7 +28,7 @@ Coinsnap is **Bitcoin payment software for merchants** and a brand of **Onlinesh
 The current module release is **1.3.2** and supports:
 
 - **PrestaShop 1.7 through 9.2**
-- **PHP 7.1 or newer**
+- **PHP 7.4 or newer**
 - A **Coinsnap merchant account**, or
 - Your own **BTCPay Server**
 
