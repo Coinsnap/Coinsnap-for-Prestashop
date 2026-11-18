@@ -44,14 +44,19 @@ class CoinsnapInvoiceDecision
                 : self::MISMATCH;
         }
 
-        return match ($status) {
-            'Processing' => self::PROCESSING,
-            'Expired' => self::EXPIRED,
-            default => self::NONE,
-        };
+        switch ($status) {
+            case 'Processing':
+                return self::PROCESSING;
+            case 'Expired':
+                return self::EXPIRED;
+            default:
+                return self::NONE;
+        }
     }
 
-    private static function sameAmount(mixed $paidAmount, mixed $paidCurrency, string $expectedAmount, string $expectedCurrency): bool
+    // $paidAmount and $paidCurrency come straight from the API response (string, number or null).
+    // No `mixed` type: the module still runs on PHP 7.4, where `mixed` would be read as a class name.
+    private static function sameAmount($paidAmount, $paidCurrency, string $expectedAmount, string $expectedCurrency): bool
     {
         $expected = self::toMinorUnits($expectedAmount);
         $paid = self::toMinorUnits($paidAmount);
@@ -72,7 +77,7 @@ class CoinsnapInvoiceDecision
     }
 
     // Amount as an integer of 10^-8 units, parsed from the decimal string so it is never compared as a float.
-    public static function toMinorUnits(mixed $value): ?int
+    public static function toMinorUnits($value): ?int
     {
         if (is_int($value) || is_float($value)) {
             $value = number_format((float) $value, 8, '.', '');
