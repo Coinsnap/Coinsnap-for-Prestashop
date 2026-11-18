@@ -24,6 +24,7 @@
 </div>
 
 <form action="{if isset($coinsnap_form)}{$coinsnap_form|escape:'htmlall':'UTF-8'}{/if}" id="module_form" class="defaultForm form-horizontal" method="post">
+    <input type="hidden" name="coinsnap_form_token" value="{$coinsnap_form_token|escape:'htmlall':'UTF-8'}" />
     <div class="panel" id="fieldset_0">    
         <div class="panel-heading">
         <i class="icon-cogs"></i>{l s='Settings' mod='coinsnap'}
@@ -56,7 +57,7 @@
                 <div class="col-lg-3">
                     <div class="input-group">
                         <span class="input-group-addon"><i class="icon icon-tag"></i></span>
-                        <input type="text" class="text" name="coinsnap_api_key" id="coinsnap-api-key" value="{$coinsnap_api_key|escape:'htmlall':'UTF-8'}" />
+                        <input type="password" class="text" name="coinsnap_api_key" id="coinsnap-api-key" value="" autocomplete="new-password" placeholder="{if $coinsnap_api_key_hint}{$coinsnap_api_key_hint|escape:'htmlall':'UTF-8'}{else}{l s='Paste your API key' mod='coinsnap'}{/if}" />
                     </div>
                 </div>
             </div>
@@ -86,7 +87,7 @@
                 <div class="col-lg-3">
                     <div class="input-group">
                         <span class="input-group-addon"><i class="icon icon-tag"></i></span>
-                        <input type="text" class="text" name="btcpay_api_key" id="btcpay-api-key" value="{$btcpay_api_key|escape:'htmlall':'UTF-8'}" />
+                        <input type="password" class="text" name="btcpay_api_key" id="btcpay-api-key" value="" autocomplete="new-password" placeholder="{if $btcpay_api_key_hint}{$btcpay_api_key_hint|escape:'htmlall':'UTF-8'}{else}{l s='Paste your API key' mod='coinsnap'}{/if}" />
                     </div>
                 </div>
             </div>

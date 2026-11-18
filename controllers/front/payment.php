@@ -41,6 +41,13 @@ class CoinsnapPaymentModuleFrontController extends ModuleFrontController
 
     public function postProcess()
     {
+        // Only a real checkout cart of a known customer reaches the order and invoice creation.
+        $cart = $this->context->cart;
+        if (!$cart || !$cart->id || !$cart->id_customer || !$cart->id_address_invoice || !$cart->nbProducts()
+            || !Validate::isLoadedObject(new Customer((int) $cart->id_customer))) {
+            Tools::redirect('index.php?controller=order&step=1');
+        }
+
         $Coinsnap = new Coinsnap();
         $pay_currency = empty(Tools::getValue('pay_currency')) ? '' : Tools::getValue('pay_currency');
         $url = $Coinsnap->getUrl($pay_currency);
