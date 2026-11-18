@@ -36,5 +36,9 @@ function upgrade_module_1_4_0($module)
         $rule->delete();
     }
 
+    // Orders placed before this upgrade have no invoice record. Their invoices are accepted for one
+    // day, by then every invoice opened before the upgrade has expired.
+    Configuration::updateGlobalValue('COINSNAP_LEGACY_UNTIL', time() + 86400);
+
     return CoinsnapInvoiceStore::createTable();
 }

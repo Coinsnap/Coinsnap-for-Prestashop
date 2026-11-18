@@ -24,6 +24,7 @@
 </div>
 
 <form action="{if isset($coinsnap_form)}{$coinsnap_form|escape:'htmlall':'UTF-8'}{/if}" id="module_form" class="defaultForm form-horizontal" method="post">
+    <input type="hidden" name="coinsnap_form_token" value="{$coinsnap_form_token|escape:'htmlall':'UTF-8'}" />
     <div class="panel" id="fieldset_0">    
         <div class="panel-heading">
         <i class="icon-cogs"></i>{l s='Settings' mod='coinsnap'}
