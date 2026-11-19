@@ -24,6 +24,7 @@ require_once(dirname(__FILE__) . '/classes/CoinsnapWebhookSignature.php');
 require_once(dirname(__FILE__) . '/classes/CoinsnapInvoiceDecision.php');
 require_once(dirname(__FILE__) . '/classes/CoinsnapInvoiceStore.php');
 require_once(dirname(__FILE__) . '/classes/CoinsnapBtcpayKey.php');
+require_once(dirname(__FILE__) . '/classes/CoinsnapInvoiceData.php');
 if (!defined('COINSNAP_SERVER_PATH')) {
     define('COINSNAP_SERVER_PATH', 'stores');
 }
@@ -433,6 +434,7 @@ class Coinsnap extends PaymentModule
 
     public function getContent()
     {
+        $this->rememberAdminUrl();
 
         if (Tools::isSubmit('submit' . $this->name) && !$this->employeeMayConfigure()) {
             $warning = $this->l('You do not have permission to change these settings.');
@@ -781,7 +783,7 @@ class Coinsnap extends PaymentModule
         if ($checkInvoice['result'] === true) {
             
 
-            $buyerName =  $iaddress->firstname.' '.$iaddress->lastname;
+            $buyerName = trim($iaddress->firstname . ' ' . $iaddress->lastname);
             $buyerEmail = $customer->email;
 
             //  Order saving
@@ -797,7 +799,6 @@ class Coinsnap extends PaymentModule
 
             $order_id = Order::getIdByCartId($cart_id).'';
             $order = new Order((int)$order_id);
-            $order_number = $order->reference;
 
             // Built from the shop's configured domain, not from the request's Host header.
             $redirectUrl = (!empty(Configuration::get('COINSNAP_RETURNURL'))) ? Configuration::get('COINSNAP_RETURNURL') : $this->context->link->getPageLink(
@@ -808,13 +809,8 @@ class Coinsnap extends PaymentModule
             );
 
 
-            $metadata = [];
-            $metadata['orderNumber'] = $order_number;
-            $metadata['customerName'] = $buyerName;
-
-            if ($this->provider === 'btcpay') {
-                $metadata['orderId'] = $order_id;
-            }
+            // orderId stays the order ID, which the webhook loads the order by (metadata.orderId on BTCPay).
+            $metadata = CoinsnapInvoiceData::metadata($this->invoiceOrderData($order, $customer, $iaddress, (int) $cart_id, $lang));
             
             $redirectAutomatically = $this->autoredirect;
             $walletMessage = '';
@@ -894,6 +890,84 @@ class Coinsnap extends PaymentModule
             Tools::redirect($url);
             exit;
         }
+    }
+
+    // The front office does not know the (renamed) admin folder, so the settings page records it for orderUrl.
+    private function rememberAdminUrl(): void
+    {
+        if (!defined('_PS_ADMIN_DIR_')) {
+            return;
+        }
+        $url = $this->context->link->getAdminBaseLink() . basename(_PS_ADMIN_DIR_) . '/';
+        if ($url !== (string) Configuration::getGlobalValue('COINSNAP_ADMIN_URL')) {
+            Configuration::updateGlobalValue('COINSNAP_ADMIN_URL', $url);
+        }
+    }
+
+    // Admin order page (the admin asks to log in, or to confirm the link without a token); '' before the settings page was opened.
+    private function adminOrderUrl(int $orderId): string
+    {
+        $adminUrl = (string) Configuration::getGlobalValue('COINSNAP_ADMIN_URL');
+        return $adminUrl !== '' ? $adminUrl . 'index.php?controller=AdminOrders&id_order=' . $orderId . '&vieworder' : '';
+    }
+
+    // Plain order values for CoinsnapInvoiceData; amounts in the order currency, tax included.
+    private function invoiceOrderData(Order $order, Customer $customer, Address $address, int $cartId, string $lang): array
+    {
+        $products = [];
+        foreach ($order->getProducts() as $row) {
+            $products[] = [
+                'name' => $row['product_name'] ?? '',
+                'sku' => $row['product_reference'] ?? '',
+                'productId' => $row['product_id'] ?? '',
+                'quantity' => $row['product_quantity'] ?? 0,
+                'price' => $row['unit_price_tax_incl'] ?? 0,
+                'total' => $row['total_price_tax_incl'] ?? 0,
+            ];
+        }
+
+        $codes = [];
+        foreach ($order->getCartRules() as $rule) {
+            $code = (string) (new CartRule((int) $rule['id_cart_rule']))->code;
+            // The one-time Bitcoin discount code means nothing to the merchant; its amount is in discountTotal.
+            if ($code !== '' && strpos($code, 'CSBTC-') !== 0) {
+                $codes[] = $code;
+            }
+        }
+
+        $message = Message::getMessageByCartId($cartId);
+        $state = $address->id_state ? new State((int) $address->id_state) : null;
+        $carrier = new Carrier((int) $order->id_carrier);
+
+        return [
+            'id' => (int) $order->id,
+            'reference' => $order->reference,
+            'orderUrl' => $this->adminOrderUrl((int) $order->id),
+            'platformVersion' => _PS_VERSION_,
+            'pluginVersion' => $this->version,
+            'language' => $lang,
+            'customer' => ['firstname' => $customer->firstname, 'lastname' => $customer->lastname, 'email' => $customer->email],
+            'address' => [
+                'firstname' => $address->firstname,
+                'lastname' => $address->lastname,
+                'company' => $address->company,
+                'phone' => $address->phone,
+                'phone_mobile' => $address->phone_mobile,
+                'address1' => $address->address1,
+                'address2' => $address->address2,
+                'city' => $address->city,
+                'postcode' => $address->postcode,
+                'state' => $state && Validate::isLoadedObject($state) ? $state->iso_code : '',
+                'country' => Country::getIsoById((int) $address->id_country),
+            ],
+            'message' => is_array($message) ? ($message['message'] ?? '') : '',
+            'products' => $products,
+            'couponCodes' => $codes,
+            'discountTotal' => $order->total_discounts_tax_incl,
+            'shippingMethod' => Validate::isLoadedObject($carrier) ? $carrier->name : '',
+            'shippingTotal' => $order->total_shipping_tax_incl,
+            'taxTotal' => (float) $order->total_paid_tax_incl - (float) $order->total_paid_tax_excl,
+        ];
     }
 
     public function webhookExists(string $apiUrl, string $apiKey, string $storeId): bool
